@@ -1,0 +1,7 @@
+[package]
+name = "vote-tally-rs"
+version = "0.1.0"
+authors = ["phayes <patrick.d.hayes@gmail.com>"]
+
+[dependencies]
+indexmap = "1.0.2"
