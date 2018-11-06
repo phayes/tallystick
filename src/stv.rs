@@ -55,13 +55,8 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
             remaining: remaining
         };
 
-        if self.running_total.contains_key(&choice) {
-            if let Some(x) = self.running_total.get_mut(&choice) {
-                x.push(weighted_vote);
-            }
-        }
-        else {
-            self.running_total.insert(choice, vec!(weighted_vote));
+        if let Some(x) = self.running_total.get_mut(&choice) {
+            x.push(weighted_vote);
         }
     }
 
@@ -76,6 +71,14 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
 
         let mut rank: u32 = 0;
         loop {
+            // If we have less candidates left than there are spots to fill, they are all winners
+            if self.running_total.len() <= self.num_winners as usize - results.len() {
+                for (candidate, _) in self.running_total.drain() {
+                    results.insert(candidate, rank);
+                }
+                return results;
+            }
+
             // Check if any candidates are over the threshold
             let mut new_winners: Vec<T> = Vec::new();
             for (candidate, votes) in self.running_total.iter() {
@@ -95,10 +98,15 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
                 }
                 return results;
             }
+
             // If there's new winners, redistribute their excess vote.
             if new_winners.len() > 0 {
+                let mut winner_votes: HashMap<T, Vec<WeightedVote<T>>> = HashMap::new();
                 for winner in new_winners.drain(0..) {
-                    let mut votes = self.running_total.remove(&winner).unwrap();
+                    let votes = self.running_total.remove(&winner).unwrap();
+                    winner_votes.insert(winner, votes);
+                }
+                for (winner, mut votes) in winner_votes.drain() {
                     let overvote = votes.len() - threshold;
                     let weight = overvote as f64 / votes.len() as f64;
                     
@@ -106,23 +114,9 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
 
                     // Redistibute to next choice
                     for vote in votes.drain(0..) {
-                        if vote.remaining.len() > 0 {
-                            let mut remaining = vote.remaining;
-                            let next_choice = remaining.remove(0);
-                            let weighted_vote = WeightedVote {
-                                weight: weight * vote.weight,
-                                remaining: remaining
-                            };
-                            if self.running_total.contains_key(&next_choice) {
-                                if let Some(x) = self.running_total.get_mut(&next_choice) {
-                                    x.push(weighted_vote);
-                                }
-                            }
-                            else {
-                                self.running_total.insert(next_choice, vec!(weighted_vote));
-                            }
-                        }
+                        self.redistribute(vote, weight);
                     }
+
                     results.insert(winner, rank);
                 }
 
@@ -170,23 +164,17 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
                     return results;
                 }
 
-                // If there's new winners, redistribute their excess vote.
-                if new_loosers.len() > 0 {
-                    for looser in new_loosers.iter() {
-                        let mut loosing_candidate = self.running_total.remove(looser).unwrap();
+                    // If there's new loosers, redistribute their excess vote.
+                    if new_loosers.len() > 0 {
+                    let mut looser_votes: Vec<Vec<WeightedVote<T>>> = Vec::new();
+                    for looser in new_loosers.drain(0..) {
+                        let votes = self.running_total.remove(&looser).unwrap();
+                        looser_votes.push(votes);
+                    }
+                    for mut votes in looser_votes.drain(0..) {
                         // Redistibute to next choice
-                        for vote in loosing_candidate.drain(0..) {
-                            if vote.remaining.len() > 0 {
-                                let mut remaining = vote.remaining;
-                                let next_choice = remaining.remove(0);
-                                let weighted_vote = WeightedVote {
-                                    weight: vote.weight,
-                                    remaining: remaining
-                                };
-                                if let Some(x) = self.running_total.get_mut(&next_choice) {
-                                    x.push(weighted_vote);
-                                }
-                            }
+                        for vote in votes.drain(0..) {
+                            self.redistribute(vote, 1.0);
                         }
                     }
                 }
@@ -195,6 +183,28 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
                     return results;
                 }
             }
+        }
+    }
+
+    fn redistribute(&mut self, vote: WeightedVote<T>, weight: f64) {
+        if vote.remaining.len() == 0 {
+            return;
+        }
+
+        let mut remaining = vote.remaining;
+        let next_choice = remaining.remove(0);
+        let weighted_vote = WeightedVote {
+            weight: weight * vote.weight,
+            remaining: remaining
+        };
+        if self.running_total.contains_key(&next_choice) {
+            if let Some(x) = self.running_total.get_mut(&next_choice) {
+                x.push(weighted_vote);
+            }
+        }
+        else {
+            // Skip to the next choice in line if the preferred next-choice has already won or lost.
+            self.redistribute(weighted_vote, 1.0);
         }
     }
 
@@ -209,6 +219,9 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
             else {
                 let len = self.candidates.len();
                 self.candidates.insert(selected.clone(), len);
+
+                // TODO: Fix this to use candidate-ids
+                self.running_total.insert(selected.clone(), vec![]);
             }
         }
         return mapped;
@@ -275,5 +288,40 @@ mod tests {
 
         let result = tally.result();
         assert_eq!(result, indexmap!{"Chocolate" => 0, "Orange" => 1, "Strawberry" => 2});
+
+
+        // From https://en.wikipedia.org/wiki/Comparison_of_the_Hare_and_Droop_quotas
+        let mut hare_tally = Tally::new(5, Quota::Hare);
+        let mut droop_tally = Tally::new(5, Quota::Droop);
+        for _ in 0..31 {
+            hare_tally.add(vec!["Andrea", "Carter", "Brad"]);
+            droop_tally.add(vec!["Andrea", "Carter", "Brad"]);
+        }
+        for _ in 0..30 {
+            hare_tally.add(vec!["Carter", "Andrea", "Brad"]);
+            droop_tally.add(vec!["Carter", "Andrea", "Brad"]);
+        }
+        for _ in 0..2 {
+            hare_tally.add(vec!["Brad", "Andrea", "Carter"]);
+            droop_tally.add(vec!["Brad", "Andrea", "Carter"]);
+        }
+        for _ in 0..20 {
+            hare_tally.add(vec!["Delilah", "Scott", "Jennifer"]);
+            droop_tally.add(vec!["Delilah", "Scott", "Jennifer"]);
+        }
+        for _ in 0..20 {
+            hare_tally.add(vec!["Scott", "Delilah", "Jennifer"]);
+            droop_tally.add(vec!["Scott", "Delilah", "Jennifer"]);
+        }
+        for _ in 0..17 {
+            hare_tally.add(vec!["Jennifer", "Delilah", "Scott"]);
+            droop_tally.add(vec!["Jennifer", "Delilah", "Scott"]);
+        }
+
+        let hare_result = hare_tally.result();
+        let droop_result = droop_tally.result();
+
+        assert_eq!(hare_result, indexmap!{"Andrea" => 0, "Carter" => 0, "Delilah" => 1, "Scott" => 1, "Jennifer" => 1});
+        assert_eq!(droop_result, indexmap!{"Andrea" => 0, "Carter" => 0, "Brad" => 1, "Delilah" => 2, "Scott" => 2});
     }
 }
