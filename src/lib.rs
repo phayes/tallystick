@@ -1,10 +1,9 @@
-extern crate indexmap;
+#[allow(unused_imports)]
+#[macro_use] extern crate indexmap;
+
+extern crate hashbrown;
+extern crate petgraph;
 
 pub mod plurality;
 pub mod stv;
-
-
-
-pub type Selection<'a> = (&'a str, u32);
-pub type Selections<'a> = Vec<Selection<'a>>;
-
+pub mod condorcet;

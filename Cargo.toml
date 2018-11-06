@@ -5,3 +5,5 @@ authors = ["phayes <patrick.d.hayes@gmail.com>"]
 
 [dependencies]
 indexmap = "1.0.2"
+hashbrown = "0.1.4"
+petgraph = "0.4.13"
