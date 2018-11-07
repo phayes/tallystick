@@ -62,8 +62,8 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
 
     pub fn result(&mut self) -> IndexMap<T, u32> {
         let threshold = match self.quota {
-            Quota::Droop => self.droop_threshold(),
-            Quota::Hare => self.hare_threshold(),
+            Quota::Droop => self.droop_threshold() as f64,
+            Quota::Hare => self.hare_threshold() as f64,
             Quota::Hagenbach => self.hagenbach_threshold(),
         };
 
@@ -86,7 +86,7 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
                 for vote in votes.iter() {
                     votecount += vote.weight;
                 }
-                if votecount as usize >= threshold {
+                if votecount >= threshold {
                     new_winners.push(candidate.clone());
                 }
             }
@@ -107,8 +107,8 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
                     winner_votes.insert(winner, votes);
                 }
                 for (winner, mut votes) in winner_votes.drain() {
-                    let overvote = votes.len() - threshold;
-                    let weight = overvote as f64 / votes.len() as f64;
+                    let overvote = votes.len() as f64 - threshold;
+                    let weight = overvote / votes.len() as f64;
                     
                     // TODO: feature-gate num-rational instead of f64 for determinism
 
@@ -241,8 +241,8 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
         (self.total_votes() / (self.num_winners as usize+ 1)) + 1
     }
 
-    fn hagenbach_threshold(&self) -> usize {
-        self.total_votes() / (self.num_winners as usize+ 1)
+    fn hagenbach_threshold(&self) -> f64 {
+        self.total_votes() as f64 / (self.num_winners as f64 + 1.0)
     }
 
     fn hare_threshold(&self) -> usize {
@@ -323,5 +323,116 @@ mod tests {
 
         assert_eq!(hare_result, indexmap!{"Andrea" => 0, "Carter" => 0, "Delilah" => 1, "Scott" => 1, "Jennifer" => 1});
         assert_eq!(droop_result, indexmap!{"Andrea" => 0, "Carter" => 0, "Brad" => 1, "Delilah" => 2, "Scott" => 2});
+
+
+        // From https://en.wikipedia.org/wiki/Droop_quota
+        let mut tally = Tally::new(2, Quota::Droop);
+        for _ in 0..45 {
+            tally.add(vec!["Andrea", "Carter"]);
+        }
+        for _ in 0..25 {
+            tally.add(vec!["Carter"]);
+        }
+        for _ in 0..30 {
+            tally.add(vec!["Brad"]);
+        }
+        
+        let result = tally.result();
+        assert_eq!(result, indexmap!{"Andrea" => 0, "Carter" => 1});
+
+
+        // From https://en.wikipedia.org/wiki/Hare_quota
+        let mut tally = Tally::new(2, Quota::Hare);
+        for _ in 0..60 {
+            tally.add(vec!["Andrea", "Carter"]);
+        }
+        for _ in 0..14 {
+            tally.add(vec!["Carter"]);
+        }
+        for _ in 0..30 {
+            tally.add(vec!["Brad", "Andrea"]);
+        }
+        
+        let result = tally.result();
+        assert_eq!(result, indexmap!{"Andrea" => 0, "Brad" => 1});
+
+
+        // From https://en.wikipedia.org/wiki/Hagenbach-Bischoff_quota
+        let mut tally = Tally::new(2, Quota::Hagenbach);
+        for _ in 0..45 {
+            tally.add(vec!["Andrea", "Carter"]);
+        }
+        for _ in 0..25 {
+            tally.add(vec!["Carter"]);
+        }
+        for _ in 0..30 {
+            tally.add(vec!["Brad"]);
+        }
+        
+        let result = tally.result();
+        assert_eq!(result, indexmap!{"Andrea" => 0, "Carter" => 1});
+
+
+        // From https://en.wikipedia.org/wiki/Hagenbach-Bischoff_quota
+        let mut hagen_tally = Tally::new(7, Quota::Hagenbach);
+        let mut droop_tally = Tally::new(7, Quota::Droop);
+        for _ in 0..14 {
+            hagen_tally.add(vec!["Andrea", "Carter", "Brad", "Delilah"]);
+            droop_tally.add(vec!["Andrea", "Carter", "Brad", "Delilah"]);
+        }
+        for _ in 0..14 {
+            hagen_tally.add(vec!["Cater", "Andrea", "Brad", "Delilah"]);
+            droop_tally.add(vec!["Cater", "Andrea", "Brad", "Delilah"]);
+        }
+        for _ in 0..14 {
+            hagen_tally.add(vec!["Brad", "Andrea", "Cater", "Delilah"]);
+            droop_tally.add(vec!["Brad", "Andrea", "Cater", "Delilah"]);
+        }
+        for _ in 0..11 {
+            hagen_tally.add(vec!["Delilah", "Andrea", "Cater", "Brad"]);
+            droop_tally.add(vec!["Delilah", "Andrea", "Cater", "Brad"]);
+        }
+        for _ in 0..13 {
+            hagen_tally.add(vec!["Scott", "Jennifer", "Matt", "Susan"]);
+            droop_tally.add(vec!["Scott", "Jennifer", "Matt", "Susan"]);
+        }
+        for _ in 0..13 {
+            hagen_tally.add(vec!["Jennifer", "Scott", "Matt", "Susan"]);
+            droop_tally.add(vec!["Jennifer", "Scott", "Matt", "Susan"]);
+        }
+        for _ in 0..13 {
+            hagen_tally.add(vec!["Matt", "Scott", "Jennifer", "Susan"]);
+            droop_tally.add(vec!["Matt", "Scott", "Jennifer", "Susan"]);
+        }
+        for _ in 0..12 {
+            hagen_tally.add(vec!["Susan", "Scott", "Jennifer", "Matt"]);
+            droop_tally.add(vec!["Susan", "Scott", "Jennifer", "Matt"]);
+        }
+
+        let _hagen_result = hagen_tally.result();
+        let _droop_result = droop_tally.result();
+
+        // TODO: Return hashmap??
+
+        //assert_eq!(hagen_result, indexmap!{"Andrea" => 0, "Carter" => 0, "Brad" => 0, "Jennifer" => 0, "Scott" => 0, "Matt" => 0, "Delilah" => 1});
+        //assert_eq!(droop_result, indexmap!{"Andrea" => 0, "Carter" => 0, "Brad" => 0, "Scott" => 1, "Jennifer" => 1, "Matt" => 1, "Susan" => 1});
+
+        // From https://en.wikipedia.org/wiki/Hagenbach-Bischoff_quota
+        let mut tally = Tally::new(2, Quota::Hagenbach);
+        for _ in 0..50 {
+            tally.add(vec!["Andrea", "Brad"]);
+        }
+        for _ in 0..150 {
+            tally.add(vec!["Andrea", "Carter"]);
+        }
+        for _ in 0..75 {
+            tally.add(vec!["Brad", "Carter"]);
+        }
+        for _ in 0..25 {
+            tally.add(vec!["Carter", "Brad"]);
+        }
+
+        let results = tally.result();
+        assert_eq!(results, indexmap!{"Andrea" => 0, "Brad" => 1, "Carter" => 1});
     }
 }
