@@ -8,7 +8,7 @@ TallyMan is a work-in-progress rust library for tallying votes in an election.
 1. **Fast** - Be the fastest vote tallying library in the world.
 2. **Secure** - Have no undefined behavior. 
 3. **Complete** - Support all well-known voting methods.
-4. **Deterministic** - Running a tally twice should never produce different results.
+4. **Deterministic** - Running the same tally twice should never produce different results.
 
 ## Features
 - [ ] `no_std` for embedded use.
