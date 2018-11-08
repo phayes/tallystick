@@ -1,3 +1,6 @@
+#![warn(rust_2018_idioms)]
+#![warn(missing_docs)]
+
 #[allow(unused_imports)]
 #[macro_use] extern crate indexmap;
 

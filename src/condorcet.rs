@@ -8,7 +8,8 @@ use petgraph::algo::tarjan_scc;
 pub struct Tally<T: Eq + Clone + Hash + std::fmt::Debug> {
     running_total: HashMap<(usize, usize), usize>,
     num_winners: u32,
-    candidates: HashMap<T, usize> // Map candiates to a unique integer identifiers.
+    candidates: HashMap<T, usize>, // Map candiates to a unique integer identifiers
+    dirty: bool
 }
 
 impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
@@ -17,7 +18,8 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
         return Tally {
             running_total: HashMap::new(),
             num_winners: num_winners,
-            candidates: HashMap::new()
+            candidates: HashMap::new(),
+            dirty: false
         };
     }
 
@@ -36,8 +38,21 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
             }
         }
     }
+
+    pub fn reset(&mut self) {
+        self.running_total = HashMap::new();
+        self.candidates = HashMap::new();
+        self.dirty = false;
+    }
     
     pub fn result(&mut self) -> IndexMap<T, u32> {
+        if self.dirty {
+            panic!("votetally Tally::result() cannot be called twice without first calling reset().");
+        }
+        else {
+            self.dirty = true;
+        }
+
         // Compute smith-sets using Tarjan's strongly connected components algorithm.
         let graph = self.build_graph();
         let smith_sets = tarjan_scc(&graph);
