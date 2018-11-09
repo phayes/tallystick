@@ -1,5 +1,5 @@
 [package]
-name = "vote-tally-rs"
+name = "tallyman"
 version = "0.1.0"
 authors = ["phayes <patrick.d.hayes@gmail.com>"]
 
@@ -7,3 +7,10 @@ authors = ["phayes <patrick.d.hayes@gmail.com>"]
 indexmap = "1.0.2"
 hashbrown = "0.1.4"
 petgraph = "0.4.13"
+
+[dev-dependencies]
+criterion = "0.2"
+
+[[bench]]
+name = "benchmark"
+harness = false
