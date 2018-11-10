@@ -24,8 +24,7 @@ pub enum Quota {
 pub struct Tally<T: Eq + Clone + Hash> {
     running_total: HashMap<T, Vec<WeightedVote<T>>>,
     num_winners: u32,
-    quota: Quota,
-    candidates: HashMap<T, usize> // Map candiates to a unique integer identifiers.
+    quota: Quota
 }
 
 impl<T: Eq + Clone + Hash> Tally<T>  {
@@ -34,8 +33,7 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
         return Tally {
             running_total: HashMap::new(),
             num_winners: num_winners,
-            quota: quota,
-            candidates: HashMap::new()
+            quota: quota
         };
     }
 
@@ -45,7 +43,7 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
         }
 
         // Ensure all selections are in the candidates list
-        self.mapped_candidates(&selection);
+        //self.mapped_candidates(&selection);
         
         let mut remaining = selection.clone();
         let choice = remaining.remove(0);
@@ -206,25 +204,6 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
             // Skip to the next choice in line if the preferred next-choice has already won or lost.
             self.redistribute(weighted_vote, 1.0);
         }
-    }
-
-    // Ensure that candidates are in our list of candidates, and return an internal numeric representation of the same
-    // TODO: Can we use a trait for this?
-    fn mapped_candidates(&mut self, selection: &Vec<T>) -> Vec<usize> {
-        let mut mapped = Vec::<usize>::new();
-        for selected in selection.iter() {
-            if self.candidates.contains_key(&selected) {
-                mapped.push(*self.candidates.get(&selected).unwrap());
-            }
-            else {
-                let len = self.candidates.len();
-                self.candidates.insert(selected.clone(), len);
-
-                // TODO: Fix this to use candidate-ids
-                self.running_total.insert(selected.clone(), vec![]);
-            }
-        }
-        return mapped;
     }
 
     fn total_votes(&self) -> usize {
