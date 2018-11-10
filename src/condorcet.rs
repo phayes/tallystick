@@ -119,6 +119,7 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
             else {
                 let len = self.candidates.len();
                 self.candidates.insert(selected.clone(), len);
+                mapped.push(len);
             }
         }
         return mapped;
