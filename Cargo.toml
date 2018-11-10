@@ -10,6 +10,7 @@ petgraph = "0.4.13"
 
 [dev-dependencies]
 criterion = "0.2"
+rand = "0.5.5"
 
 [[bench]]
 name = "benchmark"
