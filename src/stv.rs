@@ -4,7 +4,7 @@ use hashbrown::HashMap;
 use indexmap::IndexMap;
 
 #[derive(Debug)]
-struct WeightedVote<T: Eq + Clone + Hash> {
+struct WeightedVote<T: Eq + Clone + Hash + std::fmt::Debug> {
     weight: f64,
     remaining: Vec<T>,
 }
@@ -21,13 +21,13 @@ pub enum Quota {
     Hagenbach
 }
 
-pub struct Tally<T: Eq + Clone + Hash> {
+pub struct Tally<T: Eq + Clone + Hash + std::fmt::Debug> {
     running_total: HashMap<T, Vec<WeightedVote<T>>>,
     num_winners: u32,
     quota: Quota
 }
 
-impl<T: Eq + Clone + Hash> Tally<T>  {
+impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
 
     pub fn new(num_winners: u32, quota: Quota) -> Self {
         return Tally {
@@ -42,20 +42,22 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
             return;
         }
 
-        // Ensure all selections are in the candidates list
-        //self.mapped_candidates(&selection);
-        
         let mut remaining = selection.clone();
         let choice = remaining.remove(0);
+
+        // Ensure that the running total contains all candidates
+        for candidate in remaining.iter() {
+            if !self.running_total.contains_key(candidate) {
+                self.running_total.insert(candidate.clone(), vec![]);
+            }
+        }
 
         let weighted_vote = WeightedVote {
             weight: 1.0,
             remaining: remaining
         };
 
-        if let Some(x) = self.running_total.get_mut(&choice) {
-            x.push(weighted_vote);
-        }
+        self.running_total.entry(choice).or_default().push(weighted_vote);
     }
 
     pub fn result(&mut self) -> IndexMap<T, u32> {
@@ -69,7 +71,7 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
 
         let mut rank: u32 = 0;
         loop {
-            // If we have less candidates left than there are spots to fill, they are all winners
+            // Step 1. If we have less candidates left than there are spots to fill, they are all winners
             if self.running_total.len() <= self.num_winners as usize - results.len() {
                 for (candidate, _) in self.running_total.drain() {
                     results.insert(candidate, rank);
@@ -77,7 +79,7 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
                 return results;
             }
 
-            // Check if any candidates are over the threshold
+            // Step 2. Check if any candidates are over the threshold
             let mut new_winners: Vec<T> = Vec::new();
             for (candidate, votes) in self.running_total.iter() {
                 let mut votecount = 0.0;
@@ -89,15 +91,15 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
                 }
             }
 
-            // If we have enough winners, end the tally and return results.
-            if (results.len() + new_winners.len()) as u32 > self.num_winners {
+            // Step 3. If we have enough winners, end the tally and return results.
+            if (results.len() + new_winners.len()) as u32 >= self.num_winners {
                 for winner in new_winners.drain(0..) {
                     results.insert(winner, rank);
                 }
                 return results;
             }
 
-            // If there's new winners, redistribute their excess vote.
+            // Step 4. If there's new winners, redistribute their excess vote.
             if new_winners.len() > 0 {
                 let mut winner_votes: HashMap<T, Vec<WeightedVote<T>>> = HashMap::new();
                 for winner in new_winners.drain(0..) {
@@ -162,8 +164,8 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
                     return results;
                 }
 
-                    // If there's new loosers, redistribute their excess vote.
-                    if new_loosers.len() > 0 {
+                // If there's new loosers, redistribute their excess vote.
+                if new_loosers.len() > 0 {
                     let mut looser_votes: Vec<Vec<WeightedVote<T>>> = Vec::new();
                     for looser in new_loosers.drain(0..) {
                         let votes = self.running_total.remove(&looser).unwrap();
@@ -177,8 +179,7 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
                     }
                 }
                 else {
-                    // Nothign else to do, just return what we have
-                    return results;
+                    unreachable!();
                 }
             }
         }

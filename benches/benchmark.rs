@@ -76,7 +76,7 @@ fn condorcet<T: Eq + Clone + Hash>(votes: &Vec<Vec<T>>) {
     tally.result();
 }
 
-fn stv<T: Eq + Clone + Hash>(votes: &Vec<Vec<T>>) {
+fn stv<T: Eq + Clone + Hash + std::fmt::Debug>(votes: &Vec<Vec<T>>) {
     let mut tally = tallyman::stv::Tally::new(1, tallyman::stv::Quota::Droop);
     
     for vote in votes.iter() {
