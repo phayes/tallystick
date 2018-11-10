@@ -7,21 +7,21 @@ use std::collections::HashMap;
 
 use indexmap::IndexMap;
 
-pub struct PluralityTally<T: Eq + Clone + Hash + std::fmt::Debug> {
+pub struct Tally<T: Eq + Clone + Hash> {
     running_total: HashMap<T, usize>,
     num_winners: u32
 }
 
-impl<T: Eq + Clone + Hash + std::fmt::Debug> PluralityTally<T>  {
+impl<T: Eq + Clone + Hash> Tally<T>  {
 
     pub fn new(num_winners: u32) -> Self {
-        return PluralityTally {
+        return Tally {
             running_total: HashMap::new(),
             num_winners: num_winners
         };
     }
 
-    pub fn add(&mut self, selection: T) {
+    pub fn add(&mut self, selection: &T) {
         if self.running_total.contains_key(&selection) {
             if let Some(x) = self.running_total.get_mut(&selection) {
                 *x += 1;
@@ -86,13 +86,13 @@ mod tests {
     fn plurality_test() {
 
         // Election between Alice, Bob, and Cir
-        let mut tally = PluralityTally::new(2);
-        tally.add("Alice");
-        tally.add("Cir");
-        tally.add("Bob");
-        tally.add("Alice");
-        tally.add("Alice");
-        tally.add("Bob");
+        let mut tally = Tally::new(2);
+        tally.add(&String::from("Alice"));
+        tally.add(&String::from("Cir"));
+        tally.add(&String::from("Bob"));
+        tally.add(&String::from("Alice"));
+        tally.add(&String::from("Alice"));
+        tally.add(&String::from("Bob"));
 
         let result = tally.result();
 
@@ -105,15 +105,15 @@ mod tests {
         assert_eq!(1, *runner_up_rank);
 
         // Election for the most popular integer
-        let mut tally = PluralityTally::new(2);
-        tally.add(99);
-        tally.add(100);
-        tally.add(99);
-        tally.add(99);
-        tally.add(1);
-        tally.add(1);
-        tally.add(2);
-        tally.add(0);
+        let mut tally = Tally::new(2);
+        tally.add(&99);
+        tally.add(&100);
+        tally.add(&99);
+        tally.add(&99);
+        tally.add(&1);
+        tally.add(&1);
+        tally.add(&2);
+        tally.add(&0);
 
         let result = tally.result();
 
