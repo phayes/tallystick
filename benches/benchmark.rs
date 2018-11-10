@@ -54,13 +54,13 @@ fn stv_benchmark(c: &mut Criterion) {
 
     c.bench(
         "stv",
-        Benchmark::new("static/100,000", |b| b.iter(|| stv(&generate_random_votes(100_000))))
+        Benchmark::new("random/100,000", |b| b.iter(|| stv(&generate_random_votes(100_000))))
             .sample_size(10).throughput(Throughput::Elements(100_000))
     );
 
     c.bench(
         "stv",
-        Benchmark::new("static/1M", |b| b.iter(|| stv(&generate_random_votes(1_000_000))))
+        Benchmark::new("random/1M", |b| b.iter(|| stv(&generate_random_votes(1_000_000))))
             .sample_size(5).throughput(Throughput::Elements(1_000_000))
     );
 }
@@ -92,7 +92,7 @@ fn generate_random_votes(n: u32) -> Vec<Vec<u8>> {
     for _ in 0..n {
         let mut vote = Vec::<u8>::new();
         for _ in 0..rng.gen_range(0, 10) {
-            vote.push(rng.gen());
+            vote.push(rng.gen_range(0, 10));
         }
         all_votes.push(vote);
     }
