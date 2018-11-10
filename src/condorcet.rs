@@ -5,14 +5,14 @@ use petgraph::Graph;
 use petgraph::graph::NodeIndex;
 use petgraph::algo::tarjan_scc;
 
-pub struct Tally<T: Eq + Clone + Hash + std::fmt::Debug> {
+pub struct Tally<T: Eq + Clone + Hash> {
     running_total: HashMap<(usize, usize), usize>,
     num_winners: u32,
     candidates: HashMap<T, usize>, // Map candiates to a unique integer identifiers
     dirty: bool
 }
 
-impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
+impl<T: Eq + Clone + Hash> Tally<T>  {
 
     pub fn new(num_winners: u32) -> Self {
         return Tally {
@@ -23,7 +23,7 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
         };
     }
 
-    pub fn add(&mut self, selection: Vec<T>) {
+    pub fn add(&mut self, selection: &Vec<T>) {
         if selection.is_empty() {
             return;
         }
@@ -134,18 +134,18 @@ mod tests {
     fn condorcet_test() {
         // Election between Alice, Bob, and Cir
         let mut tally = Tally::new(2);
-        tally.add(vec!["Alice", "Bob", "Cir"]);
-        tally.add(vec!["Alice", "Bob", "Cir"]);
-        tally.add(vec!["Alice", "Bob", "Cir"]);
+        tally.add(&vec!["Alice", "Bob", "Cir"]);
+        tally.add(&vec!["Alice", "Bob", "Cir"]);
+        tally.add(&vec!["Alice", "Bob", "Cir"]);
 
         let result = tally.result();
         assert_eq!(result, indexmap!{"Alice" => 0, "Bob" => 1});
 
         // Test a full voting paradox
         let mut tally = Tally::new(1);
-        tally.add(vec!["Alice", "Bob", "Cir"]);
-        tally.add(vec!["Bob", "Cir", "Alice"]);
-        tally.add(vec!["Cir", "Alice", "Bob"]);
+        tally.add(&vec!["Alice", "Bob", "Cir"]);
+        tally.add(&vec!["Bob", "Cir", "Alice"]);
+        tally.add(&vec!["Cir", "Alice", "Bob"]);
 
         let result = tally.result();
         assert_eq!(result, indexmap!{"Alice" => 0, "Bob" => 0, "Cir" => 0});
@@ -156,16 +156,16 @@ mod tests {
         // From: https://en.wikipedia.org/wiki/Condorcet_method
         let mut tally = Tally::new(4);
         for _ in 0..42 {
-            tally.add(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"]);
+            tally.add(&vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"]);
         }
         for _ in 0..26 {
-            tally.add(vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"]);
+            tally.add(&vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"]);
         }
         for _ in 0..15 {
-            tally.add(vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"]);
+            tally.add(&vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"]);
         }
         for _ in 0..17 {
-            tally.add(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"]);
+            tally.add(&vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"]);
         }
 
         let result = tally.result();

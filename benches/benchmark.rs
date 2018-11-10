@@ -7,7 +7,6 @@ use criterion::Criterion;
 use criterion::Benchmark;
 use criterion::Throughput;
 use std::cmp::Eq;
-use std::fmt::Debug;
 use std::hash::Hash;
 use rand::prelude::*;
 
@@ -16,26 +15,26 @@ fn condorcet_benchmark(c: &mut Criterion) {
     // 100K from predefined list of candidates and candidate ratios
     c.bench(
         "condorcet",
-        Benchmark::new("static/100K", |b| b.iter(|| condorcet(generate_static_votes(100_000))))
+        Benchmark::new("static/100K", |b| b.iter(|| condorcet(&generate_static_votes(100_000))))
             .sample_size(10).throughput(Throughput::Elements(100_000))
     );
 
     // 1M from predefined list of candidates and candidate ratios
     c.bench(
         "condorcet",
-        Benchmark::new("static/1M", |b| b.iter(|| condorcet(generate_static_votes(1_000_000))))
+        Benchmark::new("static/1M", |b| b.iter(|| condorcet(&generate_static_votes(1_000_000))))
             .sample_size(5).throughput(Throughput::Elements(1_000_000))
     );
 
     c.bench(
         "condorcet",
-        Benchmark::new("random/100K", |b| b.iter(|| condorcet(generate_random_votes(100_000))))
+        Benchmark::new("random/100K", |b| b.iter(|| condorcet(&generate_random_votes(100_000))))
             .sample_size(5).throughput(Throughput::Elements(100_000))
     );
 
     c.bench(
         "condorcet",
-        Benchmark::new("random/1M", |b| b.iter(|| condorcet(generate_random_votes(1_000_000))))
+        Benchmark::new("random/1M", |b| b.iter(|| condorcet(&generate_random_votes(1_000_000))))
             .sample_size(5).throughput(Throughput::Elements(1_000_000))
     );
 }
@@ -43,45 +42,45 @@ fn condorcet_benchmark(c: &mut Criterion) {
 fn stv_benchmark(c: &mut Criterion) {
     c.bench(
         "stv",
-        Benchmark::new("static/100,000", |b| b.iter(|| stv(generate_static_votes(100_000))))
+        Benchmark::new("static/100,000", |b| b.iter(|| stv(&generate_static_votes(100_000))))
             .sample_size(10).throughput(Throughput::Elements(100_000))
     );
 
     c.bench(
         "stv",
-        Benchmark::new("static/1M", |b| b.iter(|| stv(generate_static_votes(1_000_000))))
+        Benchmark::new("static/1M", |b| b.iter(|| stv(&generate_static_votes(1_000_000))))
             .sample_size(5).throughput(Throughput::Elements(1_000_000))
     );
 
     c.bench(
         "stv",
-        Benchmark::new("static/100,000", |b| b.iter(|| stv(generate_random_votes(100_000))))
+        Benchmark::new("static/100,000", |b| b.iter(|| stv(&generate_random_votes(100_000))))
             .sample_size(10).throughput(Throughput::Elements(100_000))
     );
 
     c.bench(
         "stv",
-        Benchmark::new("static/1M", |b| b.iter(|| stv(generate_random_votes(1_000_000))))
+        Benchmark::new("static/1M", |b| b.iter(|| stv(&generate_random_votes(1_000_000))))
             .sample_size(5).throughput(Throughput::Elements(1_000_000))
     );
 }
 
 // Build a tally, put votes into the tally, and compute the results.
-fn condorcet<T: Eq + Clone + Hash + Debug>(mut votes: Vec<Vec<T>>) {
+fn condorcet<T: Eq + Clone + Hash>(votes: &Vec<Vec<T>>) {
     let mut tally = tallyman::condorcet::Tally::<T>::new(1);
 
-    for vote in votes.drain(0..) {
+    for vote in votes.iter() {
         tally.add(vote);
     }
 
     tally.result();
 }
 
-fn stv<T: Eq + Clone + Hash + Debug>(mut votes: Vec<Vec<T>>) {
+fn stv<T: Eq + Clone + Hash>(votes: &Vec<Vec<T>>) {
     let mut tally = tallyman::stv::Tally::new(1, tallyman::stv::Quota::Droop);
     
-    for vote in votes.drain(0..) {
-        tally.add(vote);
+    for vote in votes.iter() {
+        tally.add(&vote);
     }
 
     tally.result();
