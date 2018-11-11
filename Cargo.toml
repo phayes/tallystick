@@ -5,8 +5,9 @@ authors = ["phayes <patrick.d.hayes@gmail.com>"]
 
 [dependencies]
 indexmap = "1.0.2"
-hashbrown = "0.1.4"
+hashbrown = "0.1.5"
 petgraph = "0.4.13"
+derive_more = "0.13.0"
 
 [dev-dependencies]
 criterion = "0.2"
