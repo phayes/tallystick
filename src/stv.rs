@@ -37,16 +37,15 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
         };
     }
 
-    pub fn add(&mut self, selection: &Vec<T>) {
+    pub fn add(&mut self, mut selection: Vec<T>) {
         if selection.is_empty() {
             return;
         }
 
-        let mut remaining = selection.clone();
-        let choice = remaining.remove(0);
+        let choice = selection.remove(0);
 
         // Ensure that the running total contains all candidates
-        for candidate in remaining.iter() {
+        for candidate in selection.iter() {
             if !self.running_total.contains_key(candidate) {
                 self.running_total.insert(candidate.clone(), vec![]);
             }
@@ -54,10 +53,15 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
 
         let weighted_vote = WeightedVote {
             weight: 1.0,
-            remaining: remaining
+            remaining: selection
         };
 
         self.running_total.entry(choice).or_default().push(weighted_vote);
+    }
+
+    pub fn add_ref(&mut self, selection: &Vec<T>) {
+        // Regretably, we need to store the entire selection, so just clone it
+        self.add(selection.clone());
     }
 
     pub fn result(&mut self) -> IndexMap<T, u32> {
@@ -239,9 +243,9 @@ mod tests {
     fn stv_test() {
         // Election between Alice, Bob, and Cir
         let mut tally = Tally::new(2, Quota::Droop);
-        tally.add(&vec!["Alice", "Bob", "Cir"]);
-        tally.add(&vec!["Alice", "Bob", "Cir"]);
-        tally.add(&vec!["Alice", "Bob", "Cir"]);
+        tally.add(vec!["Alice", "Bob", "Cir"]);
+        tally.add(vec!["Alice", "Bob", "Cir"]);
+        tally.add(vec!["Alice", "Bob", "Cir"]);
 
         let result = tally.result();
         assert_eq!(result, indexmap!{"Alice" => 0, "Bob" => 1});
@@ -252,19 +256,19 @@ mod tests {
         // From https://en.wikipedia.org/wiki/Single_transferable_vote#Counting_the_votes
         let mut tally = Tally::new(3, Quota::Droop);
         for _ in 0..4 {
-            tally.add(&vec!["Orange"]);
+            tally.add(vec!["Orange"]);
         }
         for _ in 0..2 {
-            tally.add(&vec!["Pear", "Orange"]);
+            tally.add(vec!["Pear", "Orange"]);
         }
         for _ in 0..8 {
-            tally.add(&vec!["Chocolate", "Strawberry"]);
+            tally.add(vec!["Chocolate", "Strawberry"]);
         }
         for _ in 0..4 {
-            tally.add(&vec!["Chocolate", "Sweets"]);
+            tally.add(vec!["Chocolate", "Sweets"]);
         }
-        tally.add(&vec!["Strawberry"]);
-        tally.add(&vec!["Sweets"]);
+        tally.add(vec!["Strawberry"]);
+        tally.add(vec!["Sweets"]);
 
         let result = tally.result();
         assert_eq!(result, indexmap!{"Chocolate" => 0, "Orange" => 1, "Strawberry" => 2});
@@ -274,28 +278,28 @@ mod tests {
         let mut hare_tally = Tally::new(5, Quota::Hare);
         let mut droop_tally = Tally::new(5, Quota::Droop);
         for _ in 0..31 {
-            hare_tally.add(&vec!["Andrea", "Carter", "Brad"]);
-            droop_tally.add(&vec!["Andrea", "Carter", "Brad"]);
+            hare_tally.add(vec!["Andrea", "Carter", "Brad"]);
+            droop_tally.add(vec!["Andrea", "Carter", "Brad"]);
         }
         for _ in 0..30 {
-            hare_tally.add(&vec!["Carter", "Andrea", "Brad"]);
-            droop_tally.add(&vec!["Carter", "Andrea", "Brad"]);
+            hare_tally.add(vec!["Carter", "Andrea", "Brad"]);
+            droop_tally.add(vec!["Carter", "Andrea", "Brad"]);
         }
         for _ in 0..2 {
-            hare_tally.add(&vec!["Brad", "Andrea", "Carter"]);
-            droop_tally.add(&vec!["Brad", "Andrea", "Carter"]);
+            hare_tally.add(vec!["Brad", "Andrea", "Carter"]);
+            droop_tally.add(vec!["Brad", "Andrea", "Carter"]);
         }
         for _ in 0..20 {
-            hare_tally.add(&vec!["Delilah", "Scott", "Jennifer"]);
-            droop_tally.add(&vec!["Delilah", "Scott", "Jennifer"]);
+            hare_tally.add(vec!["Delilah", "Scott", "Jennifer"]);
+            droop_tally.add(vec!["Delilah", "Scott", "Jennifer"]);
         }
         for _ in 0..20 {
-            hare_tally.add(&vec!["Scott", "Delilah", "Jennifer"]);
-            droop_tally.add(&vec!["Scott", "Delilah", "Jennifer"]);
+            hare_tally.add(vec!["Scott", "Delilah", "Jennifer"]);
+            droop_tally.add(vec!["Scott", "Delilah", "Jennifer"]);
         }
         for _ in 0..17 {
-            hare_tally.add(&vec!["Jennifer", "Delilah", "Scott"]);
-            droop_tally.add(&vec!["Jennifer", "Delilah", "Scott"]);
+            hare_tally.add(vec!["Jennifer", "Delilah", "Scott"]);
+            droop_tally.add(vec!["Jennifer", "Delilah", "Scott"]);
         }
 
         let hare_result = hare_tally.result();
@@ -308,13 +312,13 @@ mod tests {
         // From https://en.wikipedia.org/wiki/Droop_quota
         let mut tally = Tally::new(2, Quota::Droop);
         for _ in 0..45 {
-            tally.add(&vec!["Andrea", "Carter"]);
+            tally.add(vec!["Andrea", "Carter"]);
         }
         for _ in 0..25 {
-            tally.add(&vec!["Carter"]);
+            tally.add(vec!["Carter"]);
         }
         for _ in 0..30 {
-            tally.add(&vec!["Brad"]);
+            tally.add(vec!["Brad"]);
         }
         
         let result = tally.result();
@@ -324,13 +328,13 @@ mod tests {
         // From https://en.wikipedia.org/wiki/Hare_quota
         let mut tally = Tally::new(2, Quota::Hare);
         for _ in 0..60 {
-            tally.add(&vec!["Andrea", "Carter"]);
+            tally.add(vec!["Andrea", "Carter"]);
         }
         for _ in 0..14 {
-            tally.add(&vec!["Carter"]);
+            tally.add(vec!["Carter"]);
         }
         for _ in 0..30 {
-            tally.add(&vec!["Brad", "Andrea"]);
+            tally.add(vec!["Brad", "Andrea"]);
         }
         
         let result = tally.result();
@@ -340,13 +344,13 @@ mod tests {
         // From https://en.wikipedia.org/wiki/Hagenbach-Bischoff_quota
         let mut tally = Tally::new(2, Quota::Hagenbach);
         for _ in 0..45 {
-            tally.add(&vec!["Andrea", "Carter"]);
+            tally.add(vec!["Andrea", "Carter"]);
         }
         for _ in 0..25 {
-            tally.add(&vec!["Carter"]);
+            tally.add(vec!["Carter"]);
         }
         for _ in 0..30 {
-            tally.add(&vec!["Brad"]);
+            tally.add(vec!["Brad"]);
         }
         
         let result = tally.result();
@@ -357,36 +361,36 @@ mod tests {
         let mut hagen_tally = Tally::new(7, Quota::Hagenbach);
         let mut droop_tally = Tally::new(7, Quota::Droop);
         for _ in 0..14 {
-            hagen_tally.add(&vec!["Andrea", "Carter", "Brad", "Delilah"]);
-            droop_tally.add(&vec!["Andrea", "Carter", "Brad", "Delilah"]);
+            hagen_tally.add(vec!["Andrea", "Carter", "Brad", "Delilah"]);
+            droop_tally.add(vec!["Andrea", "Carter", "Brad", "Delilah"]);
         }
         for _ in 0..14 {
-            hagen_tally.add(&vec!["Cater", "Andrea", "Brad", "Delilah"]);
-            droop_tally.add(&vec!["Cater", "Andrea", "Brad", "Delilah"]);
+            hagen_tally.add(vec!["Cater", "Andrea", "Brad", "Delilah"]);
+            droop_tally.add(vec!["Cater", "Andrea", "Brad", "Delilah"]);
         }
         for _ in 0..14 {
-            hagen_tally.add(&vec!["Brad", "Andrea", "Cater", "Delilah"]);
-            droop_tally.add(&vec!["Brad", "Andrea", "Cater", "Delilah"]);
+            hagen_tally.add(vec!["Brad", "Andrea", "Cater", "Delilah"]);
+            droop_tally.add(vec!["Brad", "Andrea", "Cater", "Delilah"]);
         }
         for _ in 0..11 {
-            hagen_tally.add(&vec!["Delilah", "Andrea", "Cater", "Brad"]);
-            droop_tally.add(&vec!["Delilah", "Andrea", "Cater", "Brad"]);
+            hagen_tally.add(vec!["Delilah", "Andrea", "Cater", "Brad"]);
+            droop_tally.add(vec!["Delilah", "Andrea", "Cater", "Brad"]);
         }
         for _ in 0..13 {
-            hagen_tally.add(&vec!["Scott", "Jennifer", "Matt", "Susan"]);
-            droop_tally.add(&vec!["Scott", "Jennifer", "Matt", "Susan"]);
+            hagen_tally.add(vec!["Scott", "Jennifer", "Matt", "Susan"]);
+            droop_tally.add(vec!["Scott", "Jennifer", "Matt", "Susan"]);
         }
         for _ in 0..13 {
-            hagen_tally.add(&vec!["Jennifer", "Scott", "Matt", "Susan"]);
-            droop_tally.add(&vec!["Jennifer", "Scott", "Matt", "Susan"]);
+            hagen_tally.add(vec!["Jennifer", "Scott", "Matt", "Susan"]);
+            droop_tally.add(vec!["Jennifer", "Scott", "Matt", "Susan"]);
         }
         for _ in 0..13 {
-            hagen_tally.add(&vec!["Matt", "Scott", "Jennifer", "Susan"]);
-            droop_tally.add(&vec!["Matt", "Scott", "Jennifer", "Susan"]);
+            hagen_tally.add(vec!["Matt", "Scott", "Jennifer", "Susan"]);
+            droop_tally.add(vec!["Matt", "Scott", "Jennifer", "Susan"]);
         }
         for _ in 0..12 {
-            hagen_tally.add(&vec!["Susan", "Scott", "Jennifer", "Matt"]);
-            droop_tally.add(&vec!["Susan", "Scott", "Jennifer", "Matt"]);
+            hagen_tally.add(vec!["Susan", "Scott", "Jennifer", "Matt"]);
+            droop_tally.add(vec!["Susan", "Scott", "Jennifer", "Matt"]);
         }
 
         let _hagen_result = hagen_tally.result();
@@ -400,16 +404,16 @@ mod tests {
         // From https://en.wikipedia.org/wiki/Hagenbach-Bischoff_quota
         let mut tally = Tally::new(2, Quota::Hagenbach);
         for _ in 0..50 {
-            tally.add(&vec!["Andrea", "Brad"]);
+            tally.add(vec!["Andrea", "Brad"]);
         }
         for _ in 0..150 {
-            tally.add(&vec!["Andrea", "Carter"]);
+            tally.add(vec!["Andrea", "Carter"]);
         }
         for _ in 0..75 {
-            tally.add(&vec!["Brad", "Carter"]);
+            tally.add(vec!["Brad", "Carter"]);
         }
         for _ in 0..25 {
-            tally.add(&vec!["Carter", "Brad"]);
+            tally.add(vec!["Carter", "Brad"]);
         }
 
         let results = tally.result();

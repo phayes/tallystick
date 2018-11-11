@@ -85,20 +85,20 @@ fn stv_benchmark(c: &mut Criterion) {
 }
 
 // Build a tally, put votes into the tally, and compute the results.
-fn condorcet<T: Eq + Clone + Hash>(votes: Vec<Vec<T>>) {
+fn condorcet<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>) {
     let mut tally = tallyman::condorcet::Tally::<T>::new(1);
 
-    for vote in votes.iter() {
+    for vote in votes.drain(0..) {
         tally.add(vote);
     }
 
     tally.result();
 }
 
-fn stv<T: Eq + Clone + Hash + std::fmt::Debug>(votes: Vec<Vec<T>>) {
+fn stv<T: Eq + Clone + Hash + std::fmt::Debug>(mut votes: Vec<Vec<T>>) {
     let mut tally = tallyman::stv::Tally::new(1, tallyman::stv::Quota::Droop);
     
-    for vote in votes.iter() {
+    for vote in votes.drain(0..) {
         tally.add(vote);
     }
 
@@ -138,21 +138,21 @@ fn random_single_votes(n: u32) -> Vec<u8> {
     return all_votes;
 }
 
-fn static_transitive_votes(n: u32) -> Vec<Vec<String>> {
+fn static_transitive_votes(n: u32) -> Vec<Vec<&'static str>> {
     // We will add 10 votes per n, so devide target number by 10
     let mut all_votes = Vec::new();
     let n = n / 10;
     for _ in 0..(4*n) {
-        all_votes.push(vec!["Memphis".to_owned(), "Nashville".to_owned(), "Chattanooga".to_owned(), "Knoxville".to_owned()]);
+        all_votes.push(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"]);
     }
     for _ in 0..(3*n) {
-        all_votes.push(vec!["Nashville".to_owned(), "Chattanooga".to_owned(), "Knoxville".to_owned(), "Memphis".to_owned()]);
+        all_votes.push(vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"]);
     }
     for _ in 0..(2*n) {
-        all_votes.push(vec!["Chattanooga".to_owned(), "Knoxville".to_owned(), "Nashville".to_owned(), "Memphis".to_owned()]);
+        all_votes.push(vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"]);
     }
     for _ in 0..(1*n) {
-        all_votes.push(vec!["Knoxville".to_owned(), "Chattanooga".to_owned(), "Nashville".to_owned(), "Memphis".to_owned()]);
+        all_votes.push(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"]);
     }
 
     return all_votes;
