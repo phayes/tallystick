@@ -89,7 +89,7 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
         return results;
     }
 
-    pub fn build_graph(&mut self) -> Graph<usize, ()> {
+    crate fn build_graph(&mut self) -> Graph<usize, ()> {
         let mut graph = Graph::<usize, ()>::with_capacity(self.candidates.len(), self.candidates.len()^2);
 
         // Add all candidates
