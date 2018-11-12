@@ -10,6 +10,7 @@
 
 extern crate hashbrown;
 extern crate petgraph;
+extern crate num_traits;
 
 pub mod plurality;
 pub mod stv;

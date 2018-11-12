@@ -3,32 +3,54 @@ extern crate indexmap;
 use std::cmp::Ordering;
 use std::cmp::Ord;
 use std::hash::Hash;
-use std::collections::HashMap;
-
+use hashbrown::HashMap;
+use num_traits::cast::NumCast;
+use num_traits::Num;
+use std::ops::AddAssign;
 use indexmap::IndexMap;
 
-pub struct Tally<T: Eq + Clone + Hash> {
-    running_total: HashMap<T, usize>,
+pub struct WeightedTally<T, W>
+    where T: Eq + Clone + Hash, // Candidate
+          W: AddAssign + Num + NumCast // Weight
+{
+    running_total: HashMap<T, W>,
     num_winners: u32
 }
 
-impl<T: Eq + Clone + Hash> Tally<T>  {
+pub type Tally<T> = WeightedTally<T, usize>;
+
+impl<T, W> WeightedTally<T, W>
+    where T: Eq + Clone + Hash, // Candidate
+          W: AddAssign + Num + NumCast // Weight
+{
 
     pub fn new(num_winners: u32) -> Self {
-        return Tally {
+        return WeightedTally {
             running_total: HashMap::new(),
             num_winners: num_winners
         };
     }
 
-    pub fn add(&mut self, selection: &T) {
+    pub fn add(&mut self, selection: T) {
+        self.add_weighted(selection, W::one());
+    }
+
+    pub fn add_ref(&mut self, selection: &T) {
+        self.add_weighted_ref(selection, W::one());
+    }
+
+    pub fn add_weighted(&mut self, selection: T, weight: W) {
+        *self.running_total.entry(selection).or_insert(W::zero()) += weight;
+    }
+
+    pub fn add_weighted_ref(&mut self, selection: &T, weight: W) {
         if self.running_total.contains_key(&selection) {
             if let Some(x) = self.running_total.get_mut(&selection) {
-                *x += 1;
+                *x += weight;
             }
         }
         else {
-            self.running_total.insert(selection.clone(), 1);
+            self.running_total.insert(selection.clone(), weight);
         }
     }
 
@@ -36,7 +58,7 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
         let mut result: IndexMap<T, usize> = IndexMap::new();
 
         for (candidate, votecount) in self.running_total.iter() {
-            result.insert(candidate.clone(), *votecount);
+            result.insert(candidate.clone(), votecount.to_usize().unwrap());
         }
 
         // Sort the results
@@ -87,12 +109,12 @@ mod tests {
 
         // Election between Alice, Bob, and Cir
         let mut tally = Tally::new(2);
-        tally.add(&String::from("Alice"));
-        tally.add(&String::from("Cir"));
-        tally.add(&String::from("Bob"));
-        tally.add(&String::from("Alice"));
-        tally.add(&String::from("Alice"));
-        tally.add(&String::from("Bob"));
+        tally.add("Alice");
+        tally.add("Cir");
+        tally.add("Bob");
+        tally.add("Alice");
+        tally.add("Alice");
+        tally.add("Bob");
 
         let result = tally.result();
 
@@ -106,14 +128,14 @@ mod tests {
 
         // Election for the most popular integer
         let mut tally = Tally::new(2);
-        tally.add(&99);
-        tally.add(&100);
-        tally.add(&99);
-        tally.add(&99);
-        tally.add(&1);
-        tally.add(&1);
-        tally.add(&2);
-        tally.add(&0);
+        tally.add(99);
+        tally.add(100);
+        tally.add(99);
+        tally.add(99);
+        tally.add(1);
+        tally.add(1);
+        tally.add(2);
+        tally.add(0);
 
         let result = tally.result();
 
