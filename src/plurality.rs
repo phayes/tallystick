@@ -9,7 +9,7 @@ use num_traits::Num;
 use std::ops::AddAssign;
 use indexmap::IndexMap;
 
-pub struct WeightedTally<T, W>
+pub struct WeightedTally<T, W = usize>
     where T: Eq + Clone + Hash, // Candidate
           W: AddAssign + Num + NumCast // Weight
 {
