@@ -1,6 +1,6 @@
 # TallyMan
 
-TallyMan is a work-in-progress rust library for tallying votes in an election.
+TallyMan is a work-in-progress rust library for tallying votes.
 
 *Current state is very unstable. It is not currently recommended for use. See checkboxes below for a list of features that are complete.*
 
@@ -9,17 +9,18 @@ TallyMan is a work-in-progress rust library for tallying votes in an election.
 2. **Secure** - Have no undefined behavior. 
 3. **Complete** - Support all well-known voting methods.
 4. **Deterministic** - Running the same tally twice should never produce different results.
+5. **Generic** - Generic over candidates and vote weights. 
 
 ## Features
 - [ ] `no_std` for embedded use.
-- [ ] `wasm` support for use in the browser, or in blockchain chaincode.
+- [ ] `wasm` support for use in the browser, or in blockchain smart contracts.
 - [ ] `rational` support for perfectly-precise tallies by using rational fractions instead of floats.
 - [ ] `rayon` support for multi-threaded tallies.
 
 ## Supported Tally Methods
 - [x] Plurality
-- [ ] Approval
-- [ ] Score
+- [x] Approval
+- [x] Score
 - [x] Single Transferable Vote (Droop, Hare, Hagenbach-Bischoff)
 - [ ] Instant Runoff
 - [ ] Contingent
@@ -31,3 +32,5 @@ TallyMan is a work-in-progress rust library for tallying votes in an election.
 - [ ] Borda (Nanson, Baldwin)
 - [ ] Dodgson
 - [ ] Ranked pairs
+- [ ] STAR
+- [ ] Majority judgment
