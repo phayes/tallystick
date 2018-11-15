@@ -16,3 +16,5 @@ pub mod plurality;
 pub mod stv;
 pub mod condorcet;
 pub mod result;
+pub mod approval;
+pub mod score;

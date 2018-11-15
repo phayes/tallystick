@@ -112,7 +112,7 @@ fn plurality<T: Eq + Clone + Hash>(votes: Vec<T>) {
         tally.add(vote);
     }
 
-    tally.result();
+    tally.winners();
 }
 
 fn random_transitive_votes(n: u32) -> Vec<Vec<u8>> {
