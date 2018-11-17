@@ -8,14 +8,15 @@ use std::ops::AddAssign;
 use super::result::RankedWinners;
 use super::result::CountedCandidates;
 
-/// A simple plurality (first-past-the-post) tally
+/// A plurality tally using `usize` integers to count votes. 
+/// `DefaultTally` is generally preferred over `Tally`. Since this is an alias, refer to `Tally` for method documentation.
+/// 
 /// # Examples
-///
 /// ```
-///    use tallyman::plurality::Tally;
+///    use tallyman::plurality::DefaultTally;
 ///
-///    // Election between Alice, Bob, and Cir
-///    let mut tally = Tally::new(2);
+///    // Election between Alice, Bob, and Cir with two winners.
+///    let mut tally = DefaultTally::new(2);
 ///    tally.add("Alice");
 ///    tally.add("Cir");
 ///    tally.add("Bob");
@@ -26,12 +27,21 @@ use super::result::CountedCandidates;
 ///    let winners = tally.winners().into_unranked();
 ///    println!("The winners are {:?}", winners);
 /// ```
-pub type Tally<T> = CustomTally<T, usize>;
+pub type DefaultTally<T> = Tally<T, usize>;
 
-
-/// Use CustomTally when you want to customize the type used to count the votes.
-/// By default votes are counted in `usize`, but you may want to use `f64` to allow fractionally weighted votes etc.
-pub struct CustomTally<T, C = usize>
+/// A genertic plurality tally.
+/// Useful if you need to use a different type for counting votes (eg `f64` for fractional vote weights).
+/// 
+/// ```
+///    use tallyman::plurality::DefaultTally;
+///
+///    // A tally where there is only one winnner
+///    let mut tally = DefaultTally::new(1);
+///    tally.add("Bob");               // A vote for bob
+///    tally.add_weighted("Alice", 5); // A vote for Alice with a weight of `5`
+///    let winners = tally.winners();
+/// ```.
+pub struct Tally<T, C = usize>
     where T: Eq + Clone + Hash, // Candidate
           C: Copy + Ord + AddAssign + Num + NumCast // Count type
 {
@@ -40,30 +50,36 @@ pub struct CustomTally<T, C = usize>
 }
 
 
-impl<T, C> CustomTally<T, C>
+impl<T, C> Tally<T, C>
     where T: Eq + Clone + Hash, // Candidate
           C: Copy + Ord + AddAssign + Num + NumCast // Count type
 {
 
+
     pub fn new(num_winners: u32) -> Self {
-        return CustomTally {
+        return Tally {
             running_total: HashMap::new(),
             num_winners: num_winners
         };
     }
 
+    /// Add a new vote (with a weight of 1)
     pub fn add(&mut self, selection: T) {
         self.add_weighted(selection, C::one());
     }
 
+    /// Add a vote by reference.
     pub fn add_ref(&mut self, selection: &T) {
         self.add_weighted_ref(selection, C::one());
     }
 
+    /// Add a weighted vote.
+    /// By default takes a weight as a `usize` integer, but can be customized by using `CustomTally`. 
     pub fn add_weighted(&mut self, selection: T, weight: C) {
         *self.running_total.entry(selection).or_insert(C::zero()) += weight;
     }
 
+    /// Add a weighted vote by reference.
     pub fn add_weighted_ref(&mut self, selection: &T, weight: C) {
         if self.running_total.contains_key(&selection) {
             if let Some(x) = self.running_total.get_mut(&selection) {
@@ -75,6 +91,32 @@ impl<T, C> CustomTally<T, C>
         }
     }
 
+    /// Get a ranked list of winners. Winners with the same rank are tied.
+    /// The number of winners might be greater than the requested num_winners if there is a tie.
+    /// 
+    /// # Examples
+    /// ```
+    ///    use tallyman::plurality::DefaultTally;
+    ///
+    ///    let mut tally = DefaultTally::new(2); // We ideally want only 2 winnners
+    ///    tally.add_weighted("Alice", 3);
+    ///    tally.add_weighted("Cir", 2);
+    ///    tally.add_weighted("Bob", 2);
+    ///    tally.add("Dave"); // implicit weight of 1
+    /// 
+    ///    let winners = tally.winners();
+    /// 
+    ///    println!("We have {} winners", winners.len());
+    ///    // Prints: "We have 3 winners" (due to Cir and Bob being tied)
+    ///
+    ///    for (winner, rank) in winners.iter() {
+    ///       println!("{} has a rank of {}", winner, rank);
+    ///    }
+    ///    // Prints:
+    ///    // Alice has a rank of 0
+    ///    // Bob has a rank of 1
+    ///    // Cir has a rank of 1
+    /// ```
     pub fn winners(&self) -> RankedWinners<T> {
         let mut counted = CountedCandidates::new();
         for (candidate, votecount) in self.running_total.iter() {
@@ -92,7 +134,7 @@ mod tests {
     fn plurality_test() {
 
         // Election between Alice, Bob, and Cir
-        let mut tally = Tally::new(2);
+        let mut tally = DefaultTally::new(2);
         tally.add("Alice");
         tally.add("Cir");
         tally.add("Bob");
@@ -108,7 +150,7 @@ mod tests {
         assert_eq!(winners.contains(&"Rando"), false);
 
         // Election for the most popular integer
-        let mut tally = Tally::new(1);
+        let mut tally = DefaultTally::new(1);
         tally.add(99);
         tally.add(100);
         tally.add(99);

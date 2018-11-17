@@ -6,22 +6,22 @@ use std::ops::AddAssign;
 use super::plurality;
 
 
-pub type Tally<T> = CustomTally<T, usize>;
+pub type DefaultTally<T> = Tally<T, usize>;
 
-pub struct CustomTally<T, C = usize>
+pub struct Tally<T, C = usize>
     where T: Eq + Clone + Hash,        // Candidate
           C: Copy + Ord + AddAssign + Num + NumCast // Vote count type
 {
-    plurality: plurality::CustomTally<T, C>
+    plurality: plurality::Tally<T, C>
 }
 
-impl<T, C> CustomTally<T, C>
+impl<T, C> Tally<T, C>
     where T: Eq + Clone + Hash,        // Candidate
           C: Copy + Ord + AddAssign + Num + NumCast // Vote count type
 {
     pub fn new(num_winners: u32) -> Self {
-        return CustomTally {
-            plurality: plurality::CustomTally::new(num_winners)
+        return Tally {
+            plurality: plurality::Tally::new(num_winners)
         };
     }
 

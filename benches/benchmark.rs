@@ -106,7 +106,7 @@ fn stv<T: Eq + Clone + Hash + std::fmt::Debug>(mut votes: Vec<Vec<T>>) {
 }
 
 fn plurality<T: Eq + Clone + Hash>(votes: Vec<T>) {
-    let mut tally = tallyman::plurality::Tally::new(1);
+    let mut tally = tallyman::plurality::DefaultTally::new(1);
     
     for vote in votes.iter() {
         tally.add(vote);
