@@ -1,5 +1,6 @@
 use std::ops::RangeBounds;
 use num_traits::Num;
+use std::cmp::Ordering::Equal;
 
 /// A RankedWinner is a winner in an election, ranked ascending (starting from zero).
 /// A ranked-winner with a lower rank beats a ranked-winner with a higher rank.
@@ -110,9 +111,9 @@ impl<'a, T: Clone> Iterator for IterWinners<'a, T> {
 }
 
 #[derive(Debug, Eq, PartialEq, From, Index, IndexMut, Default)]
-pub(crate) struct CountedCandidates<T: Clone + Eq, C: Copy + Num + Ord>(Vec<(T, C)>);
+pub(crate) struct CountedCandidates<T: Clone + Eq, C: Copy + Num + PartialOrd>(Vec<(T, C)>);
 
-impl<T: Clone + Eq, C: Copy + Num + Ord> CountedCandidates<T, C> {
+impl<T: Clone + Eq, C: Copy + Num + PartialOrd> CountedCandidates<T, C> {
 
   // New empty list of counted candidates
   pub(crate) fn new() -> Self {
@@ -158,9 +159,11 @@ impl<T: Clone + Eq, C: Copy + Num + Ord> CountedCandidates<T, C> {
     self.0.push((candidate, count));
   }
 
-  // Sort the candidates by tallied counts.
+  /// Sort the candidates by tallied counts.
+  // TODO: better handling of uncomparible (eg NaN) types
+  //       one possibility is to check ordering against ::zero(), and order the offending value last. 
   pub(crate) fn sort(&mut self) {
-    self.0.sort_by(|a, b| b.1.cmp(&a.1));
+    self.0.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(Equal));
   }
 
 }

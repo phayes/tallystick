@@ -8,42 +8,50 @@ use std::ops::AddAssign;
 use super::result::RankedWinners;
 use super::result::CountedCandidates;
 
-/// A plurality tally using `usize` integers to count votes. 
-/// `DefaultTally` is generally preferred over `Tally`. Since this is an alias, refer to `Tally` for method documentation.
+/// A plurality tally using `u64` integers to count votes. 
+/// `DefaultTally` is generally preferred over `Tally`.
+/// Since this is an alias, refer to `Tally` for method documentation.
 /// 
-/// # Examples
+/// # Example
 /// ```
 ///    use tallyman::plurality::DefaultTally;
 ///
-///    // Election between Alice, Bob, and Cir with two winners.
-///    let mut tally = DefaultTally::new(2);
-///    tally.add("Alice");
-///    tally.add("Cir");
-///    tally.add("Bob");
-///    tally.add("Alice");
-///    tally.add("Alice");
-///    tally.add("Bob");
+///    // What is the loniest number?
+///    // A vote with integer candidates and a single-winner.
+///    let mut tally = DefaultTally::<u32>::new(1);
+///    tally.add(5);
+///    tally.add(0);
+///    tally.add(1);
+///    tally.add(1);
+///    tally.add(2);
+///    tally.add(3);
 /// 
 ///    let winners = tally.winners().into_unranked();
-///    println!("The winners are {:?}", winners);
+///    assert!(winners[0] == 1);
 /// ```
-pub type DefaultTally<T> = Tally<T, usize>;
+pub type DefaultTally<T> = Tally<T, u64>;
 
 /// A genertic plurality tally.
-/// Useful if you need to use a different type for counting votes (eg `f64` for fractional vote weights).
 /// 
+/// Generics:
+/// - `T`: The candidate type.
+/// - `C`: The count type. `u64` is recommended, but can be modified to use a different type for counting votes (eg `f64` for fractional vote weights).
+/// 
+/// Example:
 /// ```
-///    use tallyman::plurality::DefaultTally;
+///    use tallyman::plurality::Tally;
 ///
-///    // A tally where there is only one winnner
-///    let mut tally = DefaultTally::new(1);
-///    tally.add("Bob");               // A vote for bob
-///    tally.add_weighted("Alice", 5); // A vote for Alice with a weight of `5`
+///    // A tally with string candidates, `f64` counting, and a single winner.
+///    // f64 counting lets us use fractional vote weights.
+///    let mut tally = Tally::<&str, f64>::new(1);
+///    tally.add_weighted("Alice", 5.25); // A vote for Alice with a weight of `5.25`
+///    tally.add_weighted("Bob", 0.25);   // A vote for Bob with a weight of `0.25`
+///    tally.add("Carol");                // A vote for Carol with an implicit weight of `1.0` 
 ///    let winners = tally.winners();
-/// ```.
-pub struct Tally<T, C = usize>
-    where T: Eq + Clone + Hash, // Candidate
-          C: Copy + Ord + AddAssign + Num + NumCast // Count type
+/// ```
+pub struct Tally<T, C = u64>
+    where T: Eq + Clone + Hash,                            // Candidate type
+          C: Copy + PartialOrd + AddAssign + Num + NumCast // Count type
 {
     running_total: HashMap<T, C>,
     num_winners: u32
@@ -51,11 +59,14 @@ pub struct Tally<T, C = usize>
 
 
 impl<T, C> Tally<T, C>
-    where T: Eq + Clone + Hash, // Candidate
-          C: Copy + Ord + AddAssign + Num + NumCast // Count type
+    where
+          T: Eq + Clone + Hash,                            // Candidate type
+          C: Copy + PartialOrd + AddAssign + Num + NumCast // Count type
 {
 
-
+    /// Create a new `Tally` with the given number of winners.
+    /// If there is a tie, the number of winners might be more than `num_winners`.
+    /// (See [`winners()`](#method.winners) for more information on ties.)
     pub fn new(num_winners: u32) -> Self {
         return Tally {
             running_total: HashMap::new(),
@@ -92,9 +103,9 @@ impl<T, C> Tally<T, C>
     }
 
     /// Get a ranked list of winners. Winners with the same rank are tied.
-    /// The number of winners might be greater than the requested num_winners if there is a tie.
+    /// The number of winners might be greater than the requested `num_winners` if there is a tie.
     /// 
-    /// # Examples
+    /// # Example
     /// ```
     ///    use tallyman::plurality::DefaultTally;
     ///

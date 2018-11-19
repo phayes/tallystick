@@ -6,9 +6,9 @@ use std::ops::AddAssign;
 use super::plurality;
 
 
-pub type DefaultTally<T> = Tally<T, usize>;
+pub type DefaultTally<T> = Tally<T, u64>;
 
-pub struct Tally<T, C = usize>
+pub struct Tally<T, C = u64>
     where T: Eq + Clone + Hash,        // Candidate
           C: Copy + Ord + AddAssign + Num + NumCast // Vote count type
 {
