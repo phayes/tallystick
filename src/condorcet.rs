@@ -1,6 +1,6 @@
 use std::hash::Hash;
 use hashbrown::HashMap;
-use indexmap::IndexMap;
+use super::RankedWinners;
 use petgraph::Graph;
 use petgraph::graph::NodeIndex;
 use petgraph::algo::tarjan_scc;
@@ -8,8 +8,7 @@ use petgraph::algo::tarjan_scc;
 pub struct Tally<T: Eq + Clone + Hash> {
     running_total: HashMap<(usize, usize), usize>,
     num_winners: u32,
-    candidates: HashMap<T, usize>, // Map candiates to a unique integer identifiers
-    dirty: bool
+    candidates: HashMap<T, usize> // Map candiates to a unique integer identifiers
 }
 
 impl<T: Eq + Clone + Hash> Tally<T>  {
@@ -18,8 +17,7 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
         return Tally {
             running_total: HashMap::new(),
             num_winners: num_winners,
-            candidates: HashMap::new(),
-            dirty: false
+            candidates: HashMap::new()
         };
     }
 
@@ -46,32 +44,24 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
     pub fn reset(&mut self) {
         self.running_total = HashMap::new();
         self.candidates = HashMap::new();
-        self.dirty = false;
     }
     
-    pub fn result(&mut self) -> IndexMap<T, u32> {
-        if self.dirty {
-            panic!("votetally Tally::result() cannot be called twice without first calling reset().");
-        }
-        else {
-            self.dirty = true;
-        }
-
+    pub fn winners(&mut self) -> RankedWinners<T> {
         // Compute smith-sets using Tarjan's strongly connected components algorithm.
         let graph = self.build_graph();
         let smith_sets = tarjan_scc(&graph);
 
-        // Inverse the candidate map, this consumed the candidate map.
+        // Inverse the candidate map, cloned candidates will be moved into the winners list.
         let mut candidates = HashMap::<usize, T>::with_capacity(self.candidates.len());
-        for (candidate, i) in self.candidates.drain() {
-            candidates.insert(i, candidate);
+        for (candidate, i) in self.candidates.iter() {
+            candidates.insert(*i, candidate.clone());
         }
 
-        // Add to results!
-        let mut results = IndexMap::<T, u32>::new();
+        // Add to winners list.
+        let mut winners = RankedWinners::new(self.num_winners);
         let mut rank = 0;
         for smith_set in smith_sets.iter() {
-            if results.len() as u32 >= self.num_winners {
+            if winners.len() as u32 >= self.num_winners {
                 break;
             }
 
@@ -81,12 +71,12 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
             for graph_id in smith_set.iter() {
                 let candidate_internal_id = graph.node_weight(*graph_id).unwrap();
                 let candidate = candidates.remove(candidate_internal_id).unwrap();
-                results.insert(candidate, rank);
+                winners.push(candidate, rank);
             }
             rank += 1;
         }
         
-        return results;
+        return winners;
     }
 
     crate fn build_graph(&mut self) -> Graph<usize, ()> {
@@ -143,8 +133,8 @@ mod tests {
         tally.add(vec!["Alice", "Bob", "Cir"]);
         tally.add(vec!["Alice", "Bob", "Cir"]);
 
-        let result = tally.result();
-        assert_eq!(result, indexmap!{"Alice" => 0, "Bob" => 1});
+        let winners = tally.winners();
+        assert_eq!(winners.into_vec(), vec!{("Alice", 0), ("Bob", 1)});
 
         // Test a full voting paradox
         let mut tally = Tally::new(1);
@@ -152,8 +142,10 @@ mod tests {
         tally.add(vec!["Bob", "Cir", "Alice"]);
         tally.add(vec!["Cir", "Alice", "Bob"]);
 
-        let result = tally.result();
-        assert_eq!(result, indexmap!{"Alice" => 0, "Bob" => 0, "Cir" => 0});
+        let winners = tally.winners();
+        assert_eq!(winners.rank(&"Alice").unwrap(), 0);
+        assert_eq!(winners.rank(&"Bob").unwrap(), 0);
+        assert_eq!(winners.rank(&"Cir").unwrap(), 0);
     }
     
     #[test]
@@ -173,7 +165,7 @@ mod tests {
             tally.add(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"]);
         }
 
-        let result = tally.result();
-        assert_eq!(result, indexmap!{"Nashville" => 0, "Chattanooga" => 1, "Knoxville" => 2, "Memphis" => 3});
+        let winners = tally.winners();
+        assert_eq!(winners.into_vec(), vec!{("Nashville", 0), ("Chattanooga", 1), ("Knoxville", 2), ("Memphis", 3)});
     }
 }

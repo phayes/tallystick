@@ -92,7 +92,7 @@ fn condorcet<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>) {
         tally.add(vote);
     }
 
-    tally.result();
+    tally.winners();
 }
 
 fn stv<T: Eq + Clone + Hash + std::fmt::Debug>(mut votes: Vec<Vec<T>>) {

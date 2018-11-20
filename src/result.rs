@@ -63,6 +63,16 @@ impl<T: Clone + Eq> RankedWinners<T>  {
     return false;
   }
 
+  /// Get the rank of a single winner
+  pub fn rank(&self, candidate: &T) -> Option<u32> {
+    for (winner, rank) in self.iter() {
+      if candidate == winner {
+        return Some(*rank);
+      }
+    }
+    return None;
+  }
+
   /// Get an unranked list of all winners, this consumes the winner list.
   pub fn into_unranked(mut self) -> Vec<T> {
     let mut all = Vec::new();
