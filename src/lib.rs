@@ -1,8 +1,13 @@
+//! TallyMan is a work-in-progress rust library for tallying votes.
+//!
+//! ## Compatibility
+//!
+//! The `tallyman` crate currently needs nightly rust. It will move to stable when NLL is stabalized.
+
 #![warn(rust_2018_idioms)]
 #![warn(missing_docs)]
 #![feature(crate_visibility_modifier)]
 #![feature(nll)]
-
 
 #[allow(unused_imports)]
 #[macro_use] extern crate indexmap;
@@ -44,7 +49,23 @@ pub mod approval;
 pub mod score;
 
 
+/// The single transferable vote (STV) is a ranked choice voting system.
+/// Under STV, a voter has a single vote that is initially allocated to their most preferred candidate. Votes are totalled and a quota
+/// (the number of votes required to win) derived. If a candidate achieves quota, the candidate is elected and any surplus vote
+/// is transferred to other candidates in proportion to the voters' stated preferences. If no candidate acheives quota, 
+/// the bottom candidate is eliminated with votes being transferred to other candidates as determined by the voters' stated preferences.
+/// These elections, eliminations, and vote transfers continue in rounds until the correct number of candidates are elected.
 pub mod stv;
+
+
+/// The Condorcet method is a ranked-choice voting system that elects the candidate that would win a majority
+/// of the vote in all of the head-to-head elections against each of the other candidates.
+/// 
+/// The Condorcet method isn't guarunteed to produce a single-winner due to the non-transitive nature of group choice.
 pub mod condorcet;
-pub mod result;
+
+
+mod result;
+pub use result::RankedWinners;
+
 

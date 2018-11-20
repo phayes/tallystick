@@ -1,4 +1,3 @@
-use std::cmp::Ord;
 use std::hash::Hash;
 use hashbrown::HashMap;
 use num_traits::cast::NumCast;
