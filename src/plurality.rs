@@ -1,8 +1,8 @@
 use std::hash::Hash;
+use std::ops::AddAssign;
 use hashbrown::HashMap;
 use num_traits::cast::NumCast;
 use num_traits::Num;
-use std::ops::AddAssign;
 
 use super::result::RankedWinners;
 use super::result::CountedCandidates;

@@ -1,17 +1,29 @@
 use std::hash::Hash;
+use std::ops::AddAssign;
 use hashbrown::HashMap;
-use super::RankedWinners;
+use num_traits::cast::NumCast;
+use num_traits::Num;
 use petgraph::Graph;
 use petgraph::graph::NodeIndex;
 use petgraph::algo::tarjan_scc;
+use super::RankedWinners;
 
-pub struct Tally<T: Eq + Clone + Hash> {
-    running_total: HashMap<(usize, usize), usize>,
+pub type DefaultTally<T> = Tally<T, u64>;
+
+pub struct Tally<T, C = u64>
+    where T: Eq + Clone + Hash,                            // Candidate type
+          C: Copy + PartialOrd + AddAssign + Num + NumCast // Count type
+{
+    running_total: HashMap<(usize, usize), C>,
     num_winners: u32,
     candidates: HashMap<T, usize> // Map candiates to a unique integer identifiers
 }
 
-impl<T: Eq + Clone + Hash> Tally<T>  {
+impl<T, C> Tally<T, C>
+    where
+          T: Eq + Clone + Hash,                            // Candidate type
+          C: Copy + PartialOrd + AddAssign + Num + NumCast // Count type
+{
 
     pub fn new(num_winners: u32) -> Self {
         return Tally {
@@ -22,10 +34,19 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
     }
 
     pub fn add(&mut self, selection: Vec<T>) {
-       self.add_ref(&selection);
+       self.add_weighted_ref(&selection, C::one());
     }
 
     pub fn add_ref(&mut self, selection: &Vec<T>) {
+        self.add_weighted_ref(selection, C::one());
+    }
+
+    pub fn add_weighted(&mut self, selection: Vec<T>, weight: C) {
+        self.add_weighted_ref(&selection, weight);
+    }
+
+    pub fn add_weighted_ref(&mut self, selection: &Vec<T>, weight: C) {
+        // TODO: ensure votes are transitive.
         if selection.is_empty() {
             return;
         }
@@ -35,7 +56,7 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
         for (i, candidate) in selection.iter().enumerate() {
             let mut j = i + 1;
             while let Some(candidate_2) = selection.get(j) {
-                *self.running_total.entry((*candidate, *candidate_2)).or_insert(1) += 1;
+                *self.running_total.entry((*candidate, *candidate_2)).or_insert(C::zero()) += weight;
                 j += 1;
             }
         }
@@ -88,8 +109,9 @@ impl<T: Eq + Clone + Hash> Tally<T>  {
             graph_ids.insert(*candidate, graph.add_node(*candidate));
         }
 
+        let zero = C::zero();
         for ((candidate_1, candidate_2), votecount_1) in self.running_total.iter() {
-            let votecount_2 = self.running_total.get(&(*candidate_2, *candidate_1)).unwrap_or(&0);
+            let votecount_2 = self.running_total.get(&(*candidate_2, *candidate_1)).unwrap_or(&zero);
 
             // Only add if candidate_1 vs candidate_2 votecount is larger than candidate_2 vs candidate_1 votecount
             // Otherwise we will catch it when we come around to it again.
@@ -128,7 +150,7 @@ mod tests {
     #[test]
     fn condorcet_test() {
         // Election between Alice, Bob, and Cir
-        let mut tally = Tally::new(2);
+        let mut tally = DefaultTally::new(2);
         tally.add(vec!["Alice", "Bob", "Cir"]);
         tally.add(vec!["Alice", "Bob", "Cir"]);
         tally.add(vec!["Alice", "Bob", "Cir"]);
@@ -137,7 +159,7 @@ mod tests {
         assert_eq!(winners.into_vec(), vec!{("Alice", 0), ("Bob", 1)});
 
         // Test a full voting paradox
-        let mut tally = Tally::new(1);
+        let mut tally = DefaultTally::new(1);
         tally.add(vec!["Alice", "Bob", "Cir"]);
         tally.add(vec!["Bob", "Cir", "Alice"]);
         tally.add(vec!["Cir", "Alice", "Bob"]);
@@ -151,19 +173,11 @@ mod tests {
     #[test]
     fn condorcet_wikipedia_test() {
         // From: https://en.wikipedia.org/wiki/Condorcet_method
-        let mut tally = Tally::new(4);
-        for _ in 0..42 {
-            tally.add(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"]);
-        }
-        for _ in 0..26 {
-            tally.add(vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"]);
-        }
-        for _ in 0..15 {
-            tally.add(vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"]);
-        }
-        for _ in 0..17 {
-            tally.add(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"]);
-        }
+        let mut tally = DefaultTally::new(4);
+        tally.add_weighted(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"], 42);
+        tally.add_weighted(vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"], 26);
+        tally.add_weighted(vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"], 15);
+        tally.add_weighted(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"], 17);
 
         let winners = tally.winners();
         assert_eq!(winners.into_vec(), vec!{("Nashville", 0), ("Chattanooga", 1), ("Knoxville", 2), ("Memphis", 3)});
