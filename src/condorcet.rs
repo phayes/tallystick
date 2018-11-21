@@ -37,7 +37,7 @@ impl<T, C> Tally<T, C>
        self.add_weighted_ref(&selection, C::one());
     }
 
-    pub fn add_ref(&mut self, selection: &Vec<T>) {
+    pub fn add_ref(&mut self, selection: &[T]) {
         self.add_weighted_ref(selection, C::one());
     }
 
@@ -45,7 +45,7 @@ impl<T, C> Tally<T, C>
         self.add_weighted_ref(&selection, weight);
     }
 
-    pub fn add_weighted_ref(&mut self, selection: &Vec<T>, weight: C) {
+    pub fn add_weighted_ref(&mut self, selection: &[T], weight: C) {
         // TODO: ensure votes are transitive.
         if selection.is_empty() {
             return;
@@ -80,8 +80,7 @@ impl<T, C> Tally<T, C>
 
         // Add to winners list.
         let mut winners = RankedWinners::new(self.num_winners);
-        let mut rank = 0;
-        for smith_set in smith_sets.iter() {
+        for (rank, smith_set) in smith_sets.iter().enumerate() {
             if winners.len() as u32 >= self.num_winners {
                 break;
             }
@@ -89,24 +88,28 @@ impl<T, C> Tally<T, C>
             // We need to add all members of a smith set at the same time,
             // even if it means more winners than needed. All members of a smith_set
             // have the same rank.
+            // TODO: Check performance difference between cloning here and using a stable graph (where we can remove_node())
             for graph_id in smith_set.iter() {
-                let candidate_internal_id = graph.node_weight(*graph_id).unwrap();
-                let candidate = candidates.remove(candidate_internal_id).unwrap();
-                winners.push(candidate, rank);
+                let candidate = graph.node_weight(*graph_id).unwrap();
+                winners.push(candidate.clone(), rank as u32);
             }
-            rank += 1;
         }
         
         return winners;
     }
 
-    crate fn build_graph(&mut self) -> Graph<usize, ()> {
-        let mut graph = Graph::<usize, ()>::with_capacity(self.candidates.len(), self.candidates.len()^2);
+    /// <img src="https://raw.githubusercontent.com/phayes/tallyman/master/assets/pairwise-graph.png" height="320px">
+    /// Source: https://arxiv.org/pdf/1804.02973.pdf
+    pub fn build_graph(&mut self) -> Graph<T, (C, C)> {
+        // TODO: Graph nodes should contain candidates, graph vertexes the pairwise counts
+        // This would both be: nice-to-use as a public method, no need for lookup
+        // probably more extensibe for other tally methods as well 
+        let mut graph = Graph::<T, (C, C)>::with_capacity(self.candidates.len(), self.candidates.len()^2);
 
         // Add all candidates
         let mut graph_ids = HashMap::<usize, NodeIndex>::new();
-        for (_, candidate) in self.candidates.iter() {
-            graph_ids.insert(*candidate, graph.add_node(*candidate));
+        for (candidate, candidate_id) in self.candidates.iter() {
+            graph_ids.insert(*candidate_id, graph.add_node(candidate.clone()));
         }
 
         let zero = C::zero();
@@ -118,7 +121,7 @@ impl<T, C> Tally<T, C>
             if votecount_1 >= votecount_2 {
                 let candidate_1_id = graph_ids.get(candidate_1).unwrap();
                 let candidate_2_id = graph_ids.get(candidate_2).unwrap();
-                graph.add_edge(*candidate_2_id, *candidate_1_id, ());
+                graph.add_edge(*candidate_2_id, *candidate_1_id, (*votecount_1, *votecount_2));
             }
         }
 
@@ -126,7 +129,7 @@ impl<T, C> Tally<T, C>
     }
 
     // Ensure that candidates are in our list of candidates, and return an internal numeric representation of the same
-    fn mapped_candidates(&mut self, selection: &Vec<T>) -> Vec<usize> {
+    fn mapped_candidates(&mut self, selection: &[T]) -> Vec<usize> {
         let mut mapped = Vec::<usize>::new();
         for selected in selection.iter() {
             if self.candidates.contains_key(&selected) {

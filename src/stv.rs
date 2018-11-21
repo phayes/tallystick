@@ -104,7 +104,7 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
             }
 
             // Step 4. If there's new winners, redistribute their excess vote.
-            if new_winners.len() > 0 {
+            if !new_winners.is_empty() {
                 let mut winner_votes: HashMap<T, Vec<WeightedVote<T>>> = HashMap::new();
                 for winner in new_winners.drain(0..) {
                     let votes = self.running_total.remove(&winner).unwrap();
@@ -130,7 +130,7 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
                 }
 
                 // We've added winners, so increase the rank and continue to the next round.
-                rank = rank + 1;
+                rank += 1;
                 continue;
             }
             else {
@@ -169,7 +169,7 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
                 }
 
                 // If there's new loosers, redistribute their excess vote.
-                if new_loosers.len() > 0 {
+                if !new_loosers.is_empty() {
                     let mut looser_votes: Vec<Vec<WeightedVote<T>>> = Vec::new();
                     for looser in new_loosers.drain(0..) {
                         let votes = self.running_total.remove(&looser).unwrap();
@@ -190,7 +190,7 @@ impl<T: Eq + Clone + Hash + std::fmt::Debug> Tally<T>  {
     }
 
     fn redistribute(&mut self, vote: WeightedVote<T>, weight: f64) {
-        if vote.remaining.len() == 0 {
+        if vote.remaining.is_empty() {
             return;
         }
 

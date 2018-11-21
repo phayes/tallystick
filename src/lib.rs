@@ -65,7 +65,7 @@ pub mod stv;
 pub mod condorcet;
 
 
+// Common Data Structures
+// ----------------------
 mod result;
 pub use result::RankedWinners;
-
-

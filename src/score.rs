@@ -31,7 +31,7 @@ impl<T, C> Tally<T, C>
         }
     }
 
-    pub fn add_ref(&mut self, selection: &Vec<(T, C)>) {
+    pub fn add_ref(&mut self, selection: &[(T, C)]) {
         for (vote, score) in selection {
             self.plurality.add_weighted_ref(vote, *score);
         }
@@ -43,7 +43,7 @@ impl<T, C> Tally<T, C>
         }
     }
 
-    pub fn add_weighted_ref(&mut self, selection: &Vec<(T, C)>, weight: C) {
+    pub fn add_weighted_ref(&mut self, selection: &[(T, C)], weight: C) {
         for (vote, score) in selection {
             self.plurality.add_weighted_ref(vote, weight * *score);
         }

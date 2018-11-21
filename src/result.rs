@@ -24,6 +24,11 @@ impl<T: Clone + Eq> RankedWinners<T>  {
     return self.winners.len();
   }
 
+  /// Check if it's empty
+  pub fn is_empty(&self) -> bool {
+    return self.winners.is_empty();
+  }
+
   /// Clears the winners, returning all winner-rank pairs as an iterator.
   pub fn drain<R>(&mut self, range: R) -> std::vec::Drain<'_, RankedWinner<T>>
       where R: RangeBounds<usize>
@@ -46,7 +51,7 @@ impl<T: Clone + Eq> RankedWinners<T>  {
   }
 
   /// Iterate over all winner->rank pairs
-  pub fn iter<'a>(&'a self) -> IterWinners<'a, T> {
+  pub fn iter(&self) -> IterWinners<'_, T> {
     IterWinners {
         inner: self,
         pos: 0,
@@ -174,7 +179,7 @@ impl<T: Clone + Eq, C: Copy + Num + PartialOrd> CountedCandidates<T, C> {
 
   /// Get the number of winners.
   pub(crate) fn len(&self) -> usize {
-    return self.0.len();
+    self.0.len()
   }
 
   /// Transform winners into a vector of RankedWinners.
