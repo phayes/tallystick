@@ -161,7 +161,7 @@ mod tests {
         let winners = tally.winners();
         assert_eq!(winners.into_vec(), vec!{("Alice", 0), ("Bob", 1)});
 
-        // Test a full voting paradox
+        // Test a non-transitive voting paradox
         let mut tally = DefaultTally::new(1);
         tally.add(vec!["Alice", "Bob", "Cir"]);
         tally.add(vec!["Bob", "Cir", "Alice"]);
