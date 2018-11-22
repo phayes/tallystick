@@ -96,13 +96,13 @@ fn condorcet<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>) {
 }
 
 fn stv<T: Eq + Clone + Hash + std::fmt::Debug>(mut votes: Vec<Vec<T>>) {
-    let mut tally = tallyman::stv::Tally::new(1, tallyman::stv::Quota::Droop);
+    let mut tally = tallyman::stv::DefaultTally::new(1, tallyman::stv::Quota::Droop);
     
     for vote in votes.drain(0..) {
         tally.add(vote);
     }
 
-    tally.result();
+    tally.winners();
 }
 
 fn plurality<T: Eq + Clone + Hash>(votes: Vec<T>) {
