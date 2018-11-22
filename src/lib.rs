@@ -17,6 +17,10 @@ extern crate hashbrown;
 extern crate petgraph;
 extern crate num_traits;
 
+#[cfg(feature = "rational")]
+extern crate num_rational;
+
+
 /// Plurality voting is an electoral system in which each voter is allowed to vote for only one candidate, 
 /// and the candidate who polls the most among their counterparts (a plurality) is elected. It it may be called
 /// first-past-the-post (FPTP), single-choice voting, simple plurality or relative/simple majority. 

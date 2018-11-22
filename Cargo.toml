@@ -3,16 +3,24 @@ name = "tallyman"
 version = "0.1.0"
 authors = ["phayes <patrick.d.hayes@gmail.com>"]
 
+[package.metadata.docs.rs]
+features = ["rational"]
+
+[features]
+default = []
+rational = ["num-rational"]
+
 [dependencies]
 indexmap = "1.0.2"
-hashbrown = "0.1.5"
+hashbrown = "0.1.6"
 petgraph = "0.4.13"
 derive_more = "0.13.0"
 num-traits = "0.2.6"
+num-rational = {optional = true, version = "0.2.1"}
 
 [dev-dependencies]
 criterion = "0.2"
-rand = "0.5.5"
+rand = "0.6.0"
 
 [[bench]]
 name = "benchmark"

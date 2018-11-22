@@ -5,7 +5,6 @@ use num_traits::cast::NumCast;
 use num_traits::Num;
 
 use super::RankedWinners;
-use indexmap::IndexMap;
 
 #[derive(Debug)]
 struct WeightedVote<T, C>
