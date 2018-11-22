@@ -359,6 +359,7 @@ mod tests {
         let winners = tally.winners();
         assert_eq!(winners.into_vec(), vec!{("Andrea", 0), ("Carter", 1)});
 
+
         // From https://en.wikipedia.org/wiki/Hare_quota
         let mut tally = DefaultTally::new(2, Quota::Hare);
         for _ in 0..60 {
@@ -426,7 +427,6 @@ mod tests {
             hagen_tally.add(vec!["Susan", "Scott", "Jennifer", "Matt"]);
             droop_tally.add(vec!["Susan", "Scott", "Jennifer", "Matt"]);
         }
-
         
         let hagen_winners = hagen_tally.winners();
         assert_eq!(hagen_winners.len(), 7);
