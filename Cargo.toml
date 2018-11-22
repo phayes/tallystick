@@ -11,9 +11,8 @@ default = []
 rational = ["num-rational"]
 
 [dependencies]
-indexmap = "1.0.2"
 hashbrown = "0.1.6"
-petgraph = "0.4.13"
+petgraph = {default-features = false, version = "0.4.13"}
 derive_more = "0.13.0"
 num-traits = "0.2.6"
 num-rational = {optional = true, version = "0.2.1"}

@@ -10,7 +10,6 @@
 #![feature(nll)]
 
 #[allow(unused_imports)]
-#[macro_use] extern crate indexmap;
 #[macro_use] extern crate derive_more;
 
 extern crate hashbrown;
