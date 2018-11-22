@@ -2,7 +2,7 @@
 //!
 //! ## Compatibility
 //!
-//! The `tallyman` crate currently needs nightly rust. It will move to stable when NLL is stabalized.
+//! The `tallyman` crate currently needs nightly rust. It will move to stable when NLL is stabilized.
 
 #![warn(rust_2018_idioms)]
 #![warn(missing_docs)]
@@ -20,9 +20,9 @@ extern crate num_traits;
 extern crate num_rational;
 
 
-/// Plurality voting is an electoral system in which each voter is allowed to vote for only one candidate, 
-/// and the candidate who polls the most among their counterparts (a plurality) is elected. It it may be called
-/// first-past-the-post (FPTP), single-choice voting, simple plurality or relative/simple majority. 
+/// Plurality voting is an electoral system in which each voter is allowed to vote for only one candidate 
+/// and the candidate who polls the most among their counterparts (a plurality) is elected. It may be called
+/// first-past-the-post (FPTP), single-choice voting, simple plurality, or relative/simple majority. 
 /// 
 /// # Example
 /// ```
@@ -55,7 +55,7 @@ pub mod score;
 /// The single transferable vote (STV) is a ranked choice voting system.
 /// Under STV, a voter has a single vote that is initially allocated to their most preferred candidate. Votes are totalled and a quota
 /// (the number of votes required to win) derived. If a candidate achieves quota, the candidate is elected and any surplus vote
-/// is transferred to other candidates in proportion to the voters' stated preferences. If no candidate acheives quota, 
+/// is transferred to other candidates in proportion to the voters' stated preferences. If no candidate achieves quota, 
 /// the bottom candidate is eliminated with votes being transferred to other candidates as determined by the voters' stated preferences.
 /// These elections, eliminations, and vote transfers continue in rounds until the correct number of candidates are elected.
 pub mod stv;

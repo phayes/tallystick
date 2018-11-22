@@ -8,7 +8,7 @@ use std::cmp::Ordering::Equal;
 type RankedWinner<T> = (T, u32);
 
 /// `RankedWinners` is a ranked list of winning candidates, sorted according to rank. 
-/// Ranks are in acending order. A `0` ranked winner is more significant than a `3` ranked winner.
+/// Ranks are in ascending order. A `0` ranked winner is more significant than a `3` ranked winner.
 /// Winners with the same rank are tied.
 // TODO: implement Index, IndexMut
 #[derive(Debug, Eq, PartialEq, From, Default)]
@@ -87,7 +87,7 @@ impl<T: Clone + Eq> RankedWinners<T>  {
     return all;
   }
 
-  /// Check if the number of winners is more than the wanted number of winners.
+  /// Check if the actual number of winners is more than the wanted number of winners.
   /// This can happen if there is a tie.
   /// 
   /// Not all ties result in an overflow. Only a tie of the least-significantly
@@ -103,7 +103,8 @@ impl<T: Clone + Eq> RankedWinners<T>  {
   /// Get all tied least-significantly ranked candidates that overflow the wanted number of winners.
   /// 
   /// If there is a tie in the least-significantly ranked winning candidates,
-  /// then the number of winners will "overflow" the wanted number of winners.
+  /// then the actual number of winners will "overflow" the wanted number of winners, and this
+  /// method will return a list of overlow candidates (or `None` if there is no overflow).
   /// 
   /// You should always check for an overflow so you can resolve this unfortunate situation.
   pub fn overflow(&self) -> Option<Vec<T>> {

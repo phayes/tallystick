@@ -30,7 +30,7 @@ use super::result::CountedCandidates;
 /// ```
 pub type DefaultTally<T> = Tally<T, u64>;
 
-/// A genertic plurality tally.
+/// A generic plurality tally.
 /// 
 /// Generics:
 /// - `T`: The candidate type.
