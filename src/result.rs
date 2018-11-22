@@ -50,7 +50,7 @@ impl<T: Clone + Eq> RankedWinners<T>  {
     return winners;
   }
 
-  /// Iterate over all winner->rank pairs
+  /// Iterate over all winner->rank pairs.
   pub fn iter(&self) -> IterWinners<'_, T> {
     IterWinners {
         inner: self,
@@ -58,7 +58,7 @@ impl<T: Clone + Eq> RankedWinners<T>  {
     }
   }
 
-  /// Check if the given candidate exists in the set of ranked-winners
+  /// Check if the given candidate exists in the set of ranked-winners.
   pub fn contains(&self, candidate: &T) -> bool {
     for (winner, _rank) in self.iter() {
       if candidate == winner {
@@ -68,7 +68,7 @@ impl<T: Clone + Eq> RankedWinners<T>  {
     return false;
   }
 
-  /// Get the rank of a single winner
+  /// Get the rank of a single winner.
   pub fn rank(&self, candidate: &T) -> Option<u32> {
     for (winner, rank) in self.iter() {
       if candidate == winner {
@@ -91,7 +91,7 @@ impl<T: Clone + Eq> RankedWinners<T>  {
   /// This can happen if there is a tie.
   /// 
   /// Not all ties result in an overflow. Only a tie of the least-significantly
-  /// ranked winning candidates results in an overflow. Consider an election
+  /// ranked winning candidates can result in an overflow. Consider an election
   /// that is trying to fill three seats. If only the top two candidates tie, then
   /// there is no overflow. However, if the 3rd place and 4th place candidates tie,
   /// then there will be an overflow with both candidates being equally ranked to
@@ -100,10 +100,10 @@ impl<T: Clone + Eq> RankedWinners<T>  {
     return self.len() > self.num_winners as usize;
   }
 
-  /// Get all tied least-significantly ranked candidates that overflow the wanted number of winners.
+  /// Get all tied least-significantly ranked winners that overflow the wanted number of winners.
   /// 
   /// If there is a tie in the least-significantly ranked winning candidates,
-  /// then the actual number of winners will "overflow" the wanted number of winners, and this
+  /// then the actual number of winners may "overflow" the wanted number of winners, in which case this
   /// method will return a list of overlow candidates (or `None` if there is no overflow).
   /// 
   /// You should always check for an overflow so you can resolve this unfortunate situation.
