@@ -35,7 +35,7 @@ TallyMan is a work-in-progress rust library for tallying votes.
 - [ ] STAR
 - [ ] Majority judgment
 
-## Nominal Performance
+## Performance
 
 | Tally Method  | Performance (votes per second)  | Notes  |
 | --------------|---------------------------------|--------|
