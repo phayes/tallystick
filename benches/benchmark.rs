@@ -86,7 +86,7 @@ fn stv_benchmark(c: &mut Criterion) {
 
 // Build a tally, put votes into the tally, and compute the results.
 fn condorcet<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
-    let mut tally = tallyman::condorcet::Tally::<T>::with_capacity(1, num_candidates);
+    let mut tally = tallyman::condorcet::DefaultTally::with_capacity(1, num_candidates);
 
     for vote in votes.drain(0..) {
         tally.add(vote);
@@ -96,7 +96,7 @@ fn condorcet<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize
 }
 
 fn stv<T: Eq + Clone + Hash + std::fmt::Debug>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
-    let mut tally = tallyman::stv::DefaultTally::with_capacity(1, tallyman::stv::Quota::Droop, num_candidates, votes.len());
+    let mut tally = tallyman::stv::DefaultTally::with_capacity(1, tallyman::Quota::Droop, num_candidates, votes.len());
     
     for vote in votes.drain(0..) {
         tally.add(vote);
@@ -105,10 +105,10 @@ fn stv<T: Eq + Clone + Hash + std::fmt::Debug>(mut votes: Vec<Vec<T>>, num_candi
     tally.winners();
 }
 
-fn plurality<T: Eq + Clone + Hash>(votes: Vec<T>, num_candidates: usize) {
+fn plurality<T: Eq + Clone + Hash>(mut votes: Vec<T>, num_candidates: usize) {
     let mut tally = tallyman::plurality::DefaultTally::with_capacity(1, num_candidates);
     
-    for vote in votes.iter() {
+    for vote in votes.drain(0..) {
         tally.add(vote);
     }
 

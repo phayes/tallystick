@@ -5,6 +5,7 @@ use num_traits::cast::NumCast;
 use num_traits::Num;
 
 use super::RankedWinners;
+use super::Quota;
 
 #[derive(Debug)]
 struct WeightedVote<T, C>
@@ -13,18 +14,6 @@ struct WeightedVote<T, C>
 {
     weight: C,
     remaining: Vec<T>,
-}
-
-pub enum Quota {
-
-    /// Droop Quota. If you are unsure what to use, use this one.
-    Droop,
-
-    /// Hare quota.
-    Hare,
-
-    /// Hagenbach-Bischoff quota.
-    Hagenbach
 }
 
 pub type DefaultTally<T> = Tally<T, f64>;
