@@ -35,7 +35,8 @@ pub struct Tally<T, C>
 {
     running_total: HashMap<T, Vec<WeightedVote<T, C>>>,
     num_winners: u32,
-    quota: Quota
+    quota: Quota,
+    expected_votes: Option<usize> // Expected votes *per candidate*.
 }
 
 impl<T, C> Tally<T, C> 
@@ -47,7 +48,17 @@ impl<T, C> Tally<T, C>
         return Tally {
             running_total: HashMap::new(),
             num_winners: num_winners,
-            quota: quota
+            quota: quota,
+            expected_votes: None
+        };
+    }
+
+    pub fn with_capacity(num_winners: u32, quota: Quota, expected_candidates: usize, expected_votes: usize) -> Self {
+        return Tally {
+            running_total: HashMap::with_capacity(expected_candidates),
+            num_winners: num_winners,
+            quota: quota,
+            expected_votes: Some((expected_votes / expected_candidates) * 2)
         };
     }
 
@@ -69,8 +80,15 @@ impl<T, C> Tally<T, C>
             weight: C::one(),
             remaining: selection
         };
-
-        self.running_total.entry(choice).or_default().push(weighted_vote);
+        
+        match self.expected_votes {
+                Some(expected_votes) => {
+                    self.running_total.entry(choice).or_insert_with(|| Vec::with_capacity(expected_votes)).push(weighted_vote);
+                }
+                None => {
+                    self.running_total.entry(choice).or_default().push(weighted_vote);
+                }
+        }
     }
 
     pub fn add_ref(&mut self, selection: &Vec<T>) {

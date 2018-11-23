@@ -33,6 +33,14 @@ impl<T, C> Tally<T, C>
         };
     }
 
+    pub fn with_capacity(num_winners: u32, expected_candidates: usize) -> Self {
+        return Tally {
+            running_total: HashMap::with_capacity(expected_candidates^2),
+            num_winners: num_winners,
+            candidates: HashMap::with_capacity(expected_candidates)
+        };
+    }
+
     pub fn add(&mut self, selection: Vec<T>) {
        self.add_weighted_ref(&selection, C::one());
     }

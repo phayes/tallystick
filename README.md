@@ -34,3 +34,11 @@ TallyMan is a work-in-progress rust library for tallying votes.
 - [ ] Ranked pairs
 - [ ] STAR
 - [ ] Majority judgment
+
+## Nominal Performance
+
+| Tally Method  | Performance (votes per second)  | Notes  |
+| --------------|---------------------------------|--------|
+| Plurality     | 125 million v/s                 |        |
+| STV           | 3 million v/s                   |        |
+| Condorcet     | 2 million v/s                   |        |

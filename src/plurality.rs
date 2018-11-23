@@ -73,6 +73,14 @@ impl<T, C> Tally<T, C>
         };
     }
 
+    /// Create a new `Tally` with the given number of winners, and number of expected candidates.
+    pub fn with_capacity(num_winners: u32, expected_candidates: usize) -> Self {
+        return Tally {
+            running_total: HashMap::with_capacity(expected_candidates),
+            num_winners: num_winners
+        };
+    }
+
     /// Add a new vote (with a weight of 1)
     pub fn add(&mut self, selection: T) {
         self.add_weighted(selection, C::one());
