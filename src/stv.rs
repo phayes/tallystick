@@ -86,11 +86,7 @@ impl<T, C> Tally<T, C>
     }
 
     pub fn winners(&mut self) -> RankedWinners<T> {
-        let threshold = match self.quota {
-            Quota::Droop => self.droop_threshold(),
-            Quota::Hare => self.hare_threshold(),
-            Quota::Hagenbach => self.hagenbach_threshold(),
-        };
+        let threshold = self.threshold();
 
         let mut winners = RankedWinners::new(self.num_winners);
 
@@ -246,22 +242,13 @@ impl<T, C> Tally<T, C>
         return total
     }
 
-    fn droop_threshold(&self) -> C {
+    
+    // TOOD: move these to ./quota.rs
+    fn threshold(&self) -> C {
         let total_votes = C::from(self.total_votes()).unwrap();
-        let demon =  C::from(self.num_winners).unwrap() + C::one();
-        return (total_votes / demon) + C::one();
-    }
+        let num_winners = C::from(self.num_winners).unwrap();
 
-    fn hagenbach_threshold(&self) -> C {
-        let total_votes = C::from(self.total_votes()).unwrap();
-        let demon =  C::from(self.num_winners).unwrap() + C::one();
-        return total_votes / demon;
-    }
-
-    fn hare_threshold(&self) -> C {
-        let total_votes = C::from(self.total_votes()).unwrap();
-        let demon =  C::from(self.num_winners).unwrap();
-        return total_votes / demon;
+        return self.quota.threshold(total_votes, num_winners);
     }
 
 }
