@@ -43,7 +43,9 @@ pub enum Quota {
 impl Quota {
   /// Compute the threshold needed to be elected for the given quota.
   /// 
-  /// Note that total-votes should be the number of votes counted in the tally. It should not include invalid votes that were not added the tally.
+  /// Note that total-votes should be the number of votes counted in the tally.
+  /// It should not include invalid votes that were not added the tally.
+  /// For weighted tallies, it should be the sum of all weights.
   pub fn threshold<C: Num>(&self, total_votes: C, num_winners: C) -> C {
     match self {
       // TODO: Do some generic wizardry here to call .floor() on Float types for Droop

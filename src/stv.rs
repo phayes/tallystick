@@ -242,8 +242,6 @@ impl<T, C> Tally<T, C>
         return total
     }
 
-    
-    // TOOD: move these to ./quota.rs
     fn threshold(&self) -> C {
         let total_votes = C::from(self.total_votes()).unwrap();
         let num_winners = C::from(self.num_winners).unwrap();
