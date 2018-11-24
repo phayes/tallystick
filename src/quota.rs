@@ -8,7 +8,8 @@ pub enum Quota {
     /// 
     /// ```floor((total-votes / (total-seats + 1)) + 1```
     /// 
-    /// In single-winner elections, it's often known as "fifty percent plus one". The Droop quota is always an integer.
+    /// In single-winner elections, it's often known as "fifty percent plus one". 
+    /// The Droop quota is always an integer.
     /// 
     /// See [wikipedia](https://en.wikipedia.org/wiki/Droop_quota) for more details.
     Droop,
@@ -32,26 +33,43 @@ pub enum Quota {
     /// 
     /// ```total-votes / total-seats```
     /// 
-    /// In single-winner elections, it is equal to fifty percent of the vote. It is generally not recommended and
-    /// is included for completeness.
+    /// In single-winner elections, it is equal to fifty percent of the vote. 
+    /// It is generally not recommended and is included for completeness.
     /// 
     /// See [wikipedia](https://en.wikipedia.org/wiki/Hare_quota) for more details.
     Hare
 }
 
-// TODO: Fix this for float-types. Right now this isn't calling floor() for droop.
 impl Quota {
   /// Compute the threshold needed to be elected for the given quota.
   /// 
   /// Note that total-votes should be the number of votes counted in the tally.
   /// It should not include invalid votes that were not added the tally.
   /// For weighted tallies, it should be the sum of all weights.
-  pub fn threshold<C: Num>(&self, total_votes: C, num_winners: C) -> C {
+  pub fn threshold<C: Num + Floorable>(&self, total_votes: C, num_winners: C) -> C {
     match self {
-      // TODO: Do some generic wizardry here to call .floor() on Float types for Droop
-      Quota::Droop => (total_votes / (num_winners + C::one())) + C::one(),
+      Quota::Droop => (total_votes / (num_winners + C::one())).floor() + C::one(),
       Quota::Hagenbach => total_votes / (num_winners + C::one()),
       Quota::Hare => total_votes / num_winners,
     }
   }
+}
+
+pub trait Floorable {
+    fn floor(self) -> Self;
+}
+
+impl<T> Floorable for T {
+    default fn floor(self) -> Self {
+        self
+    }
+}
+
+impl<T> Floorable for T
+where
+    T: Float
+{
+    fn floor(self) -> Self {
+        self.floor()
+    }
 }

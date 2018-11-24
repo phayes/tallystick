@@ -8,6 +8,7 @@
 #![warn(missing_docs)]
 #![feature(crate_visibility_modifier)]
 #![feature(nll)]
+#![feature(specialization)]
 
 #[allow(unused_imports)]
 #[macro_use] extern crate derive_more;
@@ -75,3 +76,4 @@ pub use result::RankedWinners;
 
 mod quota;
 pub use quota::Quota;
+
