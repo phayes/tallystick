@@ -36,7 +36,18 @@ pub enum Quota {
     /// is included for completeness.
     /// 
     /// See [wikipedia](https://en.wikipedia.org/wiki/Hare_quota) for more details.
-    Hare
+    Hare,
+
+    /// Imperiali quota.
+    /// 
+    /// It is defined as:
+    /// 
+    /// ```total-votes / (total-seats + 2)```
+    /// 
+    /// It is rarely used and not recommended. 
+    /// 
+    /// See [wikipedia](https://en.wikipedia.org/wiki/Imperiali_quota) for more details.
+    Imperiali
 }
 
 // TODO: Fix this for float-types. Right now this isn't calling floor() for droop.
@@ -52,6 +63,7 @@ impl Quota {
       Quota::Droop => (total_votes / (num_winners + C::one())) + C::one(),
       Quota::Hagenbach => total_votes / (num_winners + C::one()),
       Quota::Hare => total_votes / num_winners,
+      Quota::Imperiali => total_votes / (num_winners + C::one() + C::one())
     }
   }
 }
