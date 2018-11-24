@@ -22,6 +22,7 @@ TallyMan is a work-in-progress rust library for tallying votes.
 - [x] Approval
 - [x] Score
 - [x] Single Transferable Vote (Droop, Hare, Hagenbach-Bischoff)
+- [x] CPO-STV
 - [ ] Instant Runoff
 - [ ] Contingent
 - [x] Condorcet
@@ -34,6 +35,7 @@ TallyMan is a work-in-progress rust library for tallying votes.
 - [ ] Ranked pairs
 - [ ] STAR
 - [ ] Majority judgment
+- [ ] D'Hondt (Sainte-Laguë, Huntington-Hill, Quota)
 
 ## Performance
 
