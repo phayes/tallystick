@@ -51,7 +51,7 @@ pub enum Quota {
     Imperiali
 }
 
-// TODO: Fix this for float-types. Right now this isn't calling floor() for droop.
+// TODO: Fix this for float-types. Right now this isn't calling floor() for Droop.
 impl Quota {
   /// Compute the threshold needed to be elected for the given quota.
   /// 
