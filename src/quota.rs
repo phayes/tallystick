@@ -8,7 +8,8 @@ pub enum Quota {
     /// 
     /// ```floor((total-votes / (total-seats + 1)) + 1```
     /// 
-    /// In single-winner elections, it's often known as "fifty percent plus one". The Droop quota is always an integer.
+    /// In single-winner elections, it's often known as "fifty percent plus one".
+    /// The Droop quota is always an integer, even when using fractional votes.
     /// 
     /// See [wikipedia](https://en.wikipedia.org/wiki/Droop_quota) for more details.
     Droop,
@@ -32,8 +33,8 @@ pub enum Quota {
     /// 
     /// ```total-votes / total-seats```
     /// 
-    /// In single-winner elections, it is equal to fifty percent of the vote. It is generally not recommended and
-    /// is included for completeness.
+    /// In single-winner elections, it is equal to one hundred percent of the vote.
+    /// It is generally not recommended and is included for completeness.
     /// 
     /// See [wikipedia](https://en.wikipedia.org/wiki/Hare_quota) for more details.
     Hare,
@@ -66,4 +67,85 @@ impl Quota {
       Quota::Imperiali => total_votes / (num_winners + C::one() + C::one())
     }
   }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn quota_test() {
+      // Integers
+      // --------
+      assert!(Quota::Droop.threshold(100, 1) == 51);
+      assert!(Quota::Droop.threshold(101, 1) == 51);
+      assert!(Quota::Droop.threshold(102, 1) == 52);
+
+      assert!(Quota::Droop.threshold(100, 2) == 34);
+      assert!(Quota::Droop.threshold(101, 2) == 34);
+      assert!(Quota::Droop.threshold(102, 2) == 35);
+      
+      assert!(Quota::Hagenbach.threshold(100, 1) == 50);
+      assert!(Quota::Hagenbach.threshold(101, 1) == 50); // 50.5 rounded down because integer
+      assert!(Quota::Hagenbach.threshold(102, 1) == 51);
+
+      assert!(Quota::Hagenbach.threshold(100, 2) == 33); // 33.333... rounded down because integer
+      assert!(Quota::Hagenbach.threshold(101, 2) == 33); // 33.666... rounded down because integer
+      assert!(Quota::Hagenbach.threshold(102, 2) == 34);
+      
+      assert!(Quota::Hare.threshold(100, 1) == 100);
+      assert!(Quota::Hare.threshold(101, 1) == 101);
+      assert!(Quota::Hare.threshold(102, 1) == 102);
+  
+      assert!(Quota::Hare.threshold(100, 2) == 50);
+      assert!(Quota::Hare.threshold(101, 2) == 50); // 50.5 rounded down because integer
+      assert!(Quota::Hare.threshold(102, 2) == 51);
+
+      assert!(Quota::Imperiali.threshold(100, 1) == 33);
+      assert!(Quota::Imperiali.threshold(101, 1) == 33);
+      assert!(Quota::Imperiali.threshold(102, 1) == 34);
+
+      assert!(Quota::Imperiali.threshold(100, 2) == 25);
+      assert!(Quota::Imperiali.threshold(101, 2) == 25); // 25.25 rounded down because integer
+      assert!(Quota::Imperiali.threshold(102, 2) == 25); // 25.50 rounded down because integer
+
+
+      // Floats
+      // ------
+      let thirty_three_point_threes = 33.0 + (1.0 / 3.0); // 33.333...
+      let thirty_three_point_sixes = 33.0 + (2.0 / 3.0);  // 33.666...
+
+      assert!(Quota::Droop.threshold(100.0, 1.0) == 51.0);
+      // assert!(Quota::Droop.threshold(101.0, 1.0) == 51.0); // Broken, not calling .floor() on floats
+      assert!(Quota::Droop.threshold(102.0, 1.0) == 52.0);
+
+      // assert!(Quota::Droop.threshold(100.0, 2.0) == 34.0); // Broken, not calling .floor() on floats
+      // assert!(Quota::Droop.threshold(101.0, 2.0) == 34.0); // Broken, not calling .floor() on floats
+      assert!(Quota::Droop.threshold(102.0, 2.0) == 35.0);
+      
+      assert!(Quota::Hagenbach.threshold(100.0, 1.0) == 50.0);
+      assert!(Quota::Hagenbach.threshold(101.0, 1.0) == 50.5);
+      assert!(Quota::Hagenbach.threshold(102.0, 1.0) == 51.0);
+
+      assert!(Quota::Hagenbach.threshold(100.0, 2.0) == thirty_three_point_threes); // 33.333...
+      assert!(Quota::Hagenbach.threshold(101.0, 2.0) == thirty_three_point_sixes); // 33.666...
+      assert!(Quota::Hagenbach.threshold(102.0, 2.0) == 34.0);
+
+      assert!(Quota::Hare.threshold(100.0, 1.0) == 100.0);
+      assert!(Quota::Hare.threshold(101.0, 1.0) == 101.0);
+      assert!(Quota::Hare.threshold(102.0, 1.0) == 102.0);
+  
+      assert!(Quota::Hare.threshold(100.0, 2.0) == 50.0);
+      assert!(Quota::Hare.threshold(101.0, 2.0) == 50.5);
+      assert!(Quota::Hare.threshold(102.0, 2.0) == 51.0);
+
+      assert!(Quota::Imperiali.threshold(100.0, 1.0) == thirty_three_point_threes); // 33.333...
+      assert!(Quota::Imperiali.threshold(101.0, 1.0) == thirty_three_point_sixes); // 33.666...
+      assert!(Quota::Imperiali.threshold(102.0, 1.0) == 34.0);
+
+      assert!(Quota::Imperiali.threshold(100.0, 2.0) == 25.00);
+      assert!(Quota::Imperiali.threshold(101.0, 2.0) == 25.25);
+      assert!(Quota::Imperiali.threshold(102.0, 2.0) == 25.50);
+    }
 }
