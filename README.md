@@ -22,7 +22,7 @@ TallyMan is a work-in-progress rust library for tallying votes.
 - [x] Approval
 - [x] Score
 - [x] Single Transferable Vote (Droop, Hare, Hagenbach-Bischoff)
-- [x] CPO-STV
+- [ ] CPO-STV
 - [ ] Instant Runoff
 - [ ] Contingent
 - [x] Condorcet
