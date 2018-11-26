@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate criterion;
-extern crate tallyman;
-extern crate rand;
+use tallyman;
+
 
 use criterion::Criterion;
 use criterion::Benchmark;
