@@ -18,10 +18,14 @@ TallyMan is a work-in-progress rust library for tallying votes.
 - [ ] `rayon` support for multi-threaded tallies.
 
 ## Supported Tally Methods
-- [x] Plurality
+- [x] Plurality (first-past-the-post)
 - [x] Approval
 - [x] Score
-- [x] Single Transferable Vote (Droop, Hare, Hagenbach-Bischoff)
+- [x] Single Transferable Vote
+  - [X] Droop
+  - [X] Hagenbach-Bischoff
+  - [X] Hare
+  - [X] Imperiali
 - [ ] CPO-STV
 - [ ] Instant Runoff
 - [ ] Contingent
