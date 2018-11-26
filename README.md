@@ -49,8 +49,17 @@ tallyman is a work-in-progress rust library for tallying votes.
 
 ## Tally Methods
 
-| Status | Tally Method  | Performance (votes per second)  | Notes  |
-| -------|---------------|---------------------------------|--------|
-| [X]    | Plurality     | 100 million v/s                 |        |
-| [X]    | STV           | 3 million v/s                   |        |
-| [X]    | Condorcet     | 2 million v/s                   |        |
+| Status | Tally Method  | Performance (votes per second)| Notes  |
+| -------|---------------|-------------------------------|--------|
+| ✔      | Plurality     | 100 million v/s               |        |
+| ⚠      | STV           | 3 million v/s                 |        |
+| ⚠      | Condorcet     | 2 million v/s                 |        |
+
+
+
+Status Key:
+  - ✅ - done
+  - ❌ - not done
+  - ✗ - not done?
+  - ⚡ - WIP?
+  
