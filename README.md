@@ -22,55 +22,29 @@ tallyman is a work-in-progress rust library for tallying votes.
 - [ ] `rayon` support for multi-threaded tallies.
 
 ## Supported Tally Methods
-- [x] Plurality (first-past-the-post)
-- [x] Approval
-- [x] Score
-- [x] Single Transferable Vote
-  - [X] Droop
-  - [X] Hagenbach-Bischoff
-  - [X] Hare
-  - [X] Imperiali
-- [ ] CPO-STV
-- [ ] Instant Runoff
-- [ ] Contingent
-- [x] Condorcet
-- [ ] Copeland
-- [ ] Schulze (Winning, Margin, Ratio)
-- [ ] Kemeny–Young
-- [ ] Minimax (Winning, Margin, Opposition)
-- [X] Borda (Classic, Dowdall, Modified)
-  - [ ] Nanson
-  - [ ] Baldwin
-- [ ] Dodgson (Quick, Tideman)
-- [ ] Ranked pairs (Margin, Winning)
-- [ ] STAR
-- [ ] Majority judgment
-- [ ] D'Hondt (Sainte-Laguë, Huntington-Hill, Quota)
 
-## Tally Methods
-
-| Status¹| Tally Method      | Supported Variants                   | Performance²     | Notes  |
-| -------|-------------------|--------------------------------------|------------------|--------|
-| ✓      | Plurality (FPTP)  | 100 million v/s                      | 100 million v/s  |        |
-| ⚠      | Score             |                                      |                  |        |
-| ⚠      | Approval          |                                      |                  |        |
-| ⚠      | STV               | Droop, Hagenbach-Bischoff, Hare      | 3 million v/s    |        |
-|        | CPO-STV           |                                      |                  |        |
-|        | Instant Runoff    |                                      |                  |        |
-|        | Contingent        |                                      |                  |        |
-| ⚠      | Condorcet         |                                      | 2 million v/s    |        |
-|        | Copeland          |                                      |                  |        |
-|        | Schulze           | Winning, Margin, Ratio               |                  |        |
-|        | Kemeny–Young      |                                      |                  |        |
-|        | Minimax           |                                      |                  |        |
-| ⚠      | Borda             | Classic, Dowdall, Modified           |                  |        |
-|        | Borda - Nanson    | Classic, Dowdall, Modified           |                  |        |
-|        | Borda - Baldwin   | Classic, Dowdall, Modified           |                  |        |
-|        | Dodgson           | Quick, Tideman                       |                  |        |
-|        | Ranked pairs      | Margin, Winning                      |                  |        |
-|        | STAR              |                                      |                  |        |
-|        | Majority judgment |                                      |                  |        |
-|        | D'Hondt           | Sainte-Laguë, Huntington-Hill, Quota |                  |        |
+| Status¹| Tally Method      | Supported Variants                   | Performance²     | Notes                     |
+| -------|-------------------|--------------------------------------|------------------|---------------------------|
+| ✓      | Plurality (FPTP)  |                                      | 100 million v/s  | First Past the Post       |
+| ⚠      | Score             |                                      |                  |                           |
+| ⚠      | Approval          |                                      |                  |                           |
+| ⚠      | STV               | Droop, Hagenbach-Bischoff, Hare      | 3 million v/s    | Single Transferalble Vote |
+|        | CPO-STV           |                                      |                  |                           |
+|        | Instant Runoff    |                                      |                  |                           |
+|        | Contingent        |                                      |                  |                           |
+| ⚠      | Condorcet         |                                      | 2 million v/s    |                           |
+|        | Copeland          |                                      |                  |                           |
+|        | Schulze           | Winning, Margin, Ratio               |                  |                           |
+|        | Kemeny–Young      |                                      |                  |                           |
+|        | Minimax           |                                      |                  |                           |
+| ⚠      | Borda             | Classic, Dowdall, Modified           |                  |                           |
+|        | Borda - Nanson    | Classic, Dowdall, Modified           |                  |                           |
+|        | Borda - Baldwin   | Classic, Dowdall, Modified           |                  |                           |
+|        | Dodgson           | Quick, Tideman                       |                  |                           |
+|        | Ranked pairs      | Margin, Winning                      |                  |                           |
+|        | STAR              |                                      |                  |                           |
+|        | Majority judgment |                                      |                  |                           |
+|        | D'Hondt           | Sainte-Laguë, Huntington-Hill, Quota |                  |                           |
 
 
 1. ✓ means done, ⚠ means in-progress, blank means not started but support is planned.
