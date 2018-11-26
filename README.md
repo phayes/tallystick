@@ -47,10 +47,10 @@ tallyman is a work-in-progress rust library for tallying votes.
 - [ ] Majority judgment
 - [ ] D'Hondt (Sainte-Laguë, Huntington-Hill, Quota)
 
-## Performance
+## Tally Methods
 
-| Tally Method  | Performance (votes per second)  | Notes  |
-| --------------|---------------------------------|--------|
-| Plurality     | 100 million v/s                 |        |
-| STV           | 3 million v/s                   |        |
-| Condorcet     | 2 million v/s                   |        |
+| Status | Tally Method  | Performance (votes per second)  | Notes  |
+| -------|---------------|---------------------------------|--------|
+| [X]    | Plurality     | 100 million v/s                 |        |
+| [X]    | STV           | 3 million v/s                   |        |
+| [X]    | Condorcet     | 2 million v/s                   |        |
