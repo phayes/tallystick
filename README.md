@@ -27,14 +27,14 @@ TallyMan is a work-in-progress rust library for tallying votes.
 - [ ] Contingent
 - [x] Condorcet
 - [ ] Copeland
-- [ ] Schulze
+- [ ] Schulze (Winning, Margin, Ratio)
 - [ ] Kemeny–Young
-- [ ] Minimax
-- [X] Borda
+- [ ] Minimax (Winning, Margin, Opposition)
+- [X] Borda (Classic, Dowdall, Modified)
   - [ ] Nanson
   - [ ] Baldwin
-- [ ] Dodgson
-- [ ] Ranked pairs
+- [ ] Dodgson (Quick, Tideman)
+- [ ] Ranked pairs (Margin, Winning)
 - [ ] STAR
 - [ ] Majority judgment
 - [ ] D'Hondt (Sainte-Laguë, Huntington-Hill, Quota)
