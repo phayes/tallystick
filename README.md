@@ -49,17 +49,29 @@ tallyman is a work-in-progress rust library for tallying votes.
 
 ## Tally Methods
 
-| Status | Tally Method  | Performance (votes per second)| Notes  |
-| -------|---------------|-------------------------------|--------|
-| ✔      | Plurality     | 100 million v/s               |        |
-| ⚠      | STV           | 3 million v/s                 |        |
-| ⚠      | Condorcet     | 2 million v/s                 |        |
+| Status | Tally Method      | Performance (votes per second)| Notes  |
+| -------|-------------------|-------------------------------|--------|
+| ✓      | Plurality         | 100 million v/s               |        |
+| ⚠      | Score             |                               |        |
+| ⚠      | Approval          |                               |        |
+| ⚠      | STV               | 3 million v/s                 |        |
+|        | CPO-STV           |                               |        |
+|        | Instant Runoff    |                               |        |
+|        | Contingent        |                               |        |
+| ⚠      | Condorcet         | 2 million v/s                 |        |
+|        | Copeland          |                               |        |
+|        | Schulze           |                               |        |
+|        | Kemeny–Young      |                               |        |
+|        | Minimax           |                               |        |
+|        | Borda             |                               |        |
+|        | Borda - Nanson    |                               |        |
+|        | Borda - Baldwin   |                               |        |
+|        | Dodgson           |                               |        |
+|        | Ranked pairs      |                               |        |
+|        | STAR              |                               |        |
+|        | Majority judgment |                               |        |
+|        | D'Hondt           |                               |        |
 
 
 
-Status Key:
-  - ✅ - done
-  - ❌ - not done
-  - ✗ - not done?
-  - ⚡ - WIP?
-  
+
