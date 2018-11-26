@@ -82,7 +82,8 @@ pub enum Variant {
   /// ```number-marked - candidate-position - 1```
   ModifiedBorda,
 
-  /// A modified Borda count that gives the least significantly ranked candidate 1 point.
+  /// A modified classic Borda count that gives the least significantly ranked candidate 1 point. 
+  /// Like [`ModifiedBorda`](#variant.ModifiedBorda), it only assigns points according to the number of marked candidates on each ballot, instead of the total number of candidates.
   /// Each candidate is given points according to:
   /// 
   /// ```number-marked - candidate-position```
