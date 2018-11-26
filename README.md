@@ -49,7 +49,8 @@ tallyman is a work-in-progress rust library for tallying votes.
 
 ## Tally Methods
 
-| Status | Tally Method      | Performance (votes per second)| Notes  |
+| Status | Tally Method      | Performance                   | Notes  |
+|        |                   | (votes per second)            |        |
 | -------|-------------------|-------------------------------|--------|
 | ✓      | Plurality         | 100 million v/s               |        |
 | ⚠      | Score             |                               |        |
@@ -63,7 +64,7 @@ tallyman is a work-in-progress rust library for tallying votes.
 |        | Schulze           |                               |        |
 |        | Kemeny–Young      |                               |        |
 |        | Minimax           |                               |        |
-|        | Borda             |                               |        |
+| ⚠      | Borda             |                               |        |
 |        | Borda - Nanson    |                               |        |
 |        | Borda - Baldwin   |                               |        |
 |        | Dodgson           |                               |        |
