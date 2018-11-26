@@ -46,10 +46,17 @@ impl Quota {
   /// Note that total-votes should be the number of votes counted in the tally.
   /// It should not include invalid votes that were not added the tally.
   /// For weighted tallies, it should be the sum of all weights.
+  /// 
+  /// *This method will panic if `Quota::Hagenbach` is used with an integer count type.*
   pub fn threshold<C: Num + Floorable>(&self, total_votes: C, num_winners: C) -> C {
     match self {
       Quota::Droop => (total_votes / (num_winners + C::one())).floor() + C::one(),
-      Quota::Hagenbach => total_votes / (num_winners + C::one()),
+      Quota::Hagenbach => {
+        if !C::is_float() {
+          panic!("tallyman::Quota::Hagenbach cannot be used with an integer count type. Please use a float or a rational.")
+        }
+        total_votes / (num_winners + C::one())
+      },
       Quota::Hare => total_votes / num_winners,
     }
   }
@@ -57,11 +64,15 @@ impl Quota {
 
 pub trait Floorable {
     fn floor(self) -> Self;
+    fn is_float() -> bool;
 }
 
 impl<T> Floorable for T {
     default fn floor(self) -> Self {
         self
+    }
+    default fn is_float() -> bool {
+        false
     }
 }
 
@@ -71,5 +82,8 @@ where
 {
     fn floor(self) -> Self {
         self.floor()
+    }
+    fn is_float() -> bool {
+        true
     }
 }
