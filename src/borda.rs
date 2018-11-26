@@ -8,7 +8,6 @@ use super::result::RankedWinners;
 use super::plurality::Tally as PluralityTally;
 
 /// Specifies method used to assign points to ranked candidates. 
-/// In general [Dowdall](#variant.Dowdall), [Borda](#variant.Borda) or [ModifiedBorda](#variant.ModifiedBorda) are preferred.
 pub enum Variant {
 
   /// The standard Borda count where each candidate is assigned a number of points equal to the number of candidates ranked lower than them.
