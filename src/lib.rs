@@ -76,10 +76,10 @@ pub mod borda;
 // Common Data Structures
 // ----------------------
 mod result;
-pub use result::RankedWinners;
+pub use crate::result::RankedWinners;
 
 mod quota;
-pub use quota::Quota;
+pub use crate::quota::Quota;
 
 mod traits;
-pub use traits::Numeric;
+pub use crate::traits::Numeric;
