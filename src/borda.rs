@@ -115,6 +115,7 @@ pub struct Tally<T, C = u64>
     variant: Variant
 }
 
+
 impl<T, C> Tally<T, C>
     where T: Eq + Clone + Hash,        // Candidate
           C: Copy + PartialOrd + AddAssign + Num + NumCast // Vote count type
@@ -170,6 +171,24 @@ impl<T, C> Tally<T, C>
       }
       return plurality.winners();
     }
+}
+
+pub type DefaultNansonTally<T> = NansonTally<T, u64>;
+
+pub struct NansonTally<T, C = u64>
+    where T: Eq + Clone + Hash,        // Candidate
+          C: Copy + PartialOrd + AddAssign + Num + NumCast // Vote count type
+{
+    borda: Tally<T, C>,
+}
+
+pub type DefaultBaldwinTally<T> = BaldwinTally<T, u64>;
+
+pub struct BaldwinTally<T, C = u64>
+    where T: Eq + Clone + Hash,        // Candidate
+          C: Copy + PartialOrd + AddAssign + Num + NumCast // Vote count type
+{
+    borda: Tally<T, C>,
 }
 
 
