@@ -1,16 +1,17 @@
-use std::hash::Hash;
-use std::ops::AddAssign;
 use hashbrown::HashMap;
 use num_traits::cast::NumCast;
 use num_traits::Num;
+use std::hash::Hash;
+use std::ops::AddAssign;
 
-use super::RankedWinners;
 use super::Quota;
+use super::RankedWinners;
 
 #[derive(Debug)]
 struct WeightedVote<T, C>
-    where T: Eq + Clone + Hash,                            // Candidate
-          C: Copy + PartialOrd + AddAssign + Num + NumCast // vote count type
+where
+    T: Eq + Clone + Hash,                             // Candidate
+    C: Copy + PartialOrd + AddAssign + Num + NumCast, // vote count type
 {
     weight: C,
     remaining: Vec<T>,
@@ -19,35 +20,41 @@ struct WeightedVote<T, C>
 pub type DefaultTally<T> = Tally<T, f64>;
 
 pub struct Tally<T, C>
-    where T: Eq + Clone + Hash,                            // Candidate
-          C: Copy + PartialOrd + AddAssign + Num + NumCast // vote count type
+where
+    T: Eq + Clone + Hash,                             // Candidate
+    C: Copy + PartialOrd + AddAssign + Num + NumCast, // vote count type
 {
     running_total: HashMap<T, Vec<WeightedVote<T, C>>>,
     num_winners: u32,
     quota: Quota<C>,
-    expected_votes: Option<usize> // Expected votes *per candidate*.
+    expected_votes: Option<usize>, // Expected votes *per candidate*.
 }
 
-impl<T, C> Tally<T, C> 
-    where T: Eq + Clone + Hash,                            // Candidate
-          C: Copy + PartialOrd + AddAssign + Num + NumCast // vote count type
+impl<T, C> Tally<T, C>
+where
+    T: Eq + Clone + Hash,                             // Candidate
+    C: Copy + PartialOrd + AddAssign + Num + NumCast, // vote count type
 {
-
     pub fn new(num_winners: u32, quota: Quota<C>) -> Self {
         return Tally {
             running_total: HashMap::new(),
             num_winners: num_winners,
             quota: quota,
-            expected_votes: None
+            expected_votes: None,
         };
     }
 
-    pub fn with_capacity(num_winners: u32, quota: Quota<C>, expected_candidates: usize, expected_votes: usize) -> Self {
+    pub fn with_capacity(
+        num_winners: u32,
+        quota: Quota<C>,
+        expected_candidates: usize,
+        expected_votes: usize,
+    ) -> Self {
         return Tally {
             running_total: HashMap::with_capacity(expected_candidates),
             num_winners: num_winners,
             quota: quota,
-            expected_votes: Some((expected_votes / expected_candidates) * 2)
+            expected_votes: Some((expected_votes / expected_candidates) * 2),
         };
     }
 
@@ -67,16 +74,22 @@ impl<T, C> Tally<T, C>
 
         let weighted_vote = WeightedVote {
             weight: C::one(),
-            remaining: selection
+            remaining: selection,
         };
-        
+
         match self.expected_votes {
-                Some(expected_votes) => {
-                    self.running_total.entry(choice).or_insert_with(|| Vec::with_capacity(expected_votes)).push(weighted_vote);
-                }
-                None => {
-                    self.running_total.entry(choice).or_default().push(weighted_vote);
-                }
+            Some(expected_votes) => {
+                self.running_total
+                    .entry(choice)
+                    .or_insert_with(|| Vec::with_capacity(expected_votes))
+                    .push(weighted_vote);
+            }
+            None => {
+                self.running_total
+                    .entry(choice)
+                    .or_default()
+                    .push(weighted_vote);
+            }
         }
     }
 
@@ -130,7 +143,7 @@ impl<T, C> Tally<T, C>
                 for (winner, mut votes) in winner_votes.drain() {
                     let overvote = C::from(votes.len()).unwrap() - threshold;
                     let weight = overvote / C::from(votes.len()).unwrap();
-                    
+
                     // Redistibute to next choice
                     for vote in votes.drain(0..) {
                         self.redistribute(vote, weight);
@@ -147,8 +160,7 @@ impl<T, C> Tally<T, C>
                 // We've added winners, so increase the rank and continue to the next round.
                 rank += 1;
                 continue;
-            }
-            else {
+            } else {
                 // Remove loosers and redistribute
                 let mut new_loosers: Vec<T> = Vec::new();
                 {
@@ -164,8 +176,7 @@ impl<T, C> Tally<T, C>
                         if first {
                             least = votecount;
                             first = false;
-                        }
-                        else if votecount < least {
+                        } else if votecount < least {
                             least = votecount;
                         }
 
@@ -202,8 +213,7 @@ impl<T, C> Tally<T, C>
                             self.redistribute(vote, C::one());
                         }
                     }
-                }
-                else {
+                } else {
                     unreachable!();
                 }
             }
@@ -219,14 +229,13 @@ impl<T, C> Tally<T, C>
         let next_choice = remaining.remove(0);
         let weighted_vote = WeightedVote {
             weight: weight * vote.weight,
-            remaining: remaining
+            remaining: remaining,
         };
         if self.running_total.contains_key(&next_choice) {
             if let Some(x) = self.running_total.get_mut(&next_choice) {
                 x.push(weighted_vote);
             }
-        }
-        else {
+        } else {
             // Skip to the next choice in line if the preferred next-choice has already won or lost.
             self.redistribute(weighted_vote, C::one());
         }
@@ -239,7 +248,7 @@ impl<T, C> Tally<T, C>
             total += candidate_votes.len();
         }
 
-        return total
+        return total;
     }
 
     fn threshold(&self) -> C {
@@ -248,7 +257,6 @@ impl<T, C> Tally<T, C>
 
         return self.quota.threshold(total_votes, num_winners);
     }
-
 }
 
 #[cfg(test)]
@@ -264,7 +272,7 @@ mod tests {
         tally.add(vec!["Alice", "Bob", "Cir"]);
 
         let winners = tally.winners();
-        assert_eq!(winners.into_vec(), vec!{("Alice", 0), ("Bob", 1)});
+        assert_eq!(winners.into_vec(), vec! {("Alice", 0), ("Bob", 1)});
     }
 
     #[test]
@@ -287,8 +295,10 @@ mod tests {
         tally.add(vec!["Sweets"]);
 
         let winners = tally.winners();
-        assert_eq!(winners.into_vec(), vec!{("Chocolate", 0), ("Orange", 1), ("Strawberry", 2)});
-
+        assert_eq!(
+            winners.into_vec(),
+            vec! {("Chocolate", 0), ("Orange", 1), ("Strawberry", 2)}
+        );
 
         // From https://en.wikipedia.org/wiki/Comparison_of_the_Hare_and_Droop_quotas
         let mut hare_tally = DefaultTally::new(5, Quota::Hare);
@@ -334,7 +344,6 @@ mod tests {
         assert_eq!(droop_winners.rank(&"Delilah").unwrap(), 2);
         assert_eq!(droop_winners.rank(&"Scott").unwrap(), 2);
 
-
         // From https://en.wikipedia.org/wiki/Droop_quota
         let mut tally = DefaultTally::new(2, Quota::Droop);
         for _ in 0..45 {
@@ -346,10 +355,9 @@ mod tests {
         for _ in 0..30 {
             tally.add(vec!["Brad"]);
         }
-        
-        let winners = tally.winners();
-        assert_eq!(winners.into_vec(), vec!{("Andrea", 0), ("Carter", 1)});
 
+        let winners = tally.winners();
+        assert_eq!(winners.into_vec(), vec! {("Andrea", 0), ("Carter", 1)});
 
         // From https://en.wikipedia.org/wiki/Hare_quota
         let mut tally = DefaultTally::new(2, Quota::Hare);
@@ -362,10 +370,9 @@ mod tests {
         for _ in 0..30 {
             tally.add(vec!["Brad", "Andrea"]);
         }
-        
-        let winners = tally.winners();
-        assert_eq!(winners.into_vec(), vec!{("Andrea", 0), ("Brad", 1)});
 
+        let winners = tally.winners();
+        assert_eq!(winners.into_vec(), vec! {("Andrea", 0), ("Brad", 1)});
 
         // From https://en.wikipedia.org/wiki/Hagenbach-Bischoff_quota
         let mut tally = DefaultTally::new(2, Quota::Hagenbach);
@@ -378,10 +385,9 @@ mod tests {
         for _ in 0..30 {
             tally.add(vec!["Brad"]);
         }
-        
-        let winners = tally.winners();
-        assert_eq!(winners.into_vec(), vec!{("Andrea", 0), ("Carter", 1)});
 
+        let winners = tally.winners();
+        assert_eq!(winners.into_vec(), vec! {("Andrea", 0), ("Carter", 1)});
 
         // From https://en.wikipedia.org/wiki/Hagenbach-Bischoff_quota
         let mut hagen_tally = DefaultTally::new(7, Quota::Hagenbach);
@@ -418,7 +424,7 @@ mod tests {
             hagen_tally.add(vec!["Susan", "Scott", "Jennifer", "Matt"]);
             droop_tally.add(vec!["Susan", "Scott", "Jennifer", "Matt"]);
         }
-        
+
         let hagen_winners = hagen_tally.winners();
         assert_eq!(hagen_winners.len(), 7);
         assert_eq!(hagen_winners.rank(&"Andrea").unwrap(), 0);
@@ -438,7 +444,6 @@ mod tests {
         assert_eq!(droop_winners.rank(&"Jennifer").unwrap(), 1);
         assert_eq!(droop_winners.rank(&"Matt").unwrap(), 1);
         assert_eq!(droop_winners.rank(&"Susan").unwrap(), 1);
-
 
         // From https://en.wikipedia.org/wiki/Hagenbach-Bischoff_quota
         let mut tally = DefaultTally::new(2, Quota::Hagenbach);

@@ -1,20 +1,19 @@
 use num_traits::float::FloatCore;
-use num_traits::Num;
 use num_traits::real::Real;
+use num_traits::Num;
 
-/// A trait for numeric types used to count votes. 
+/// A trait for numeric types used to count votes.
 /// This type should be automatically implemented for all numeric types you wish to use.
-/// It is used to provide trait specialization so differnetial logic can applied to 
+/// It is used to provide trait specialization so differnetial logic can applied to
 /// integer or fractional (float) based vote counting.
 pub trait Numeric {
-
-  /// Get the floor for this numeric type. 
+  /// Get the floor for this numeric type.
   /// For non-fractional types, this just returns self.
   fn floor(self) -> Self;
 
   /// Does this numeric type support fractional values?
   /// Integer-based types will return false.
-  /// Float, or num_rational::Ratio based types should return true. 
+  /// Float, or num_rational::Ratio based types should return true.
   fn fraction() -> bool;
 }
 
@@ -28,7 +27,7 @@ impl<T: Num> Numeric for T {
   }
 }
 
-// Specialize Numeric using Real. 
+// Specialize Numeric using Real.
 // Real covers all floats, as well as things like num_rational::Ratio and num_rational::BigRational.
 impl<T: Num + Real> Numeric for T {
   fn floor(self) -> Self {
