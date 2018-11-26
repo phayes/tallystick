@@ -68,6 +68,9 @@ pub mod stv;
 pub mod condorcet;
 
 
+/// The Borda count is a family of election methods in which voters rank candidates in order of preference. 
+/// The Borda count determines the winner by giving each candidate, for each ballot, a number of points corresponding to the number of candidates ranked lower. 
+/// Once all votes have been counted the candidate with the most points is the winner.
 pub mod borda;
 
 // Common Data Structures
