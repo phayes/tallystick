@@ -49,28 +49,28 @@ tallyman is a work-in-progress rust library for tallying votes.
 
 ## Tally Methods
 
-| Status¹| Tally Method      | Performance²     | Notes  |
-| -------|-------------------|------------------|--------|
-| ✓      | Plurality         | 100 million v/s  |        |
-| ⚠      | Score             |                  |        |
-| ⚠      | Approval          |                  |        |
-| ⚠      | STV               | 3 million v/s    |        |
-|        | CPO-STV           |                  |        |
-|        | Instant Runoff    |                  |        |
-|        | Contingent        |                  |        |
-| ⚠      | Condorcet         | 2 million v/s    |        |
-|        | Copeland          |                  |        |
-|        | Schulze           |                  |        |
-|        | Kemeny–Young      |                  |        |
-|        | Minimax           |                  |        |
-| ⚠      | Borda             |                  |        |
-|        | Borda - Nanson    |                  |        |
-|        | Borda - Baldwin   |                  |        |
-|        | Dodgson           |                  |        |
-|        | Ranked pairs      |                  |        |
-|        | STAR              |                  |        |
-|        | Majority judgment |                  |        |
-|        | D'Hondt           |                  |        |
+| Status¹| Tally Method      | Supported Variants                   | Performance²     | Notes  |
+| -------|-------------------|--------------------------------------|------------------|--------|
+| ✓      | Plurality (FPTP)  | 100 million v/s                      | 100 million v/s  |        |
+| ⚠      | Score             |                                      |                  |        |
+| ⚠      | Approval          |                                      |                  |        |
+| ⚠      | STV               | Droop, Hagenbach-Bischoff, Hare      | 3 million v/s    |        |
+|        | CPO-STV           |                                      |                  |        |
+|        | Instant Runoff    |                                      |                  |        |
+|        | Contingent        |                                      |                  |        |
+| ⚠      | Condorcet         |                                      | 2 million v/s    |        |
+|        | Copeland          |                                      |                  |        |
+|        | Schulze           | Winning, Margin, Ratio               |                  |        |
+|        | Kemeny–Young      |                                      |                  |        |
+|        | Minimax           |                                      |                  |        |
+| ⚠      | Borda             | Classic, Dowdall, Modified           |                  |        |
+|        | Borda - Nanson    | Classic, Dowdall, Modified           |                  |        |
+|        | Borda - Baldwin   | Classic, Dowdall, Modified           |                  |        |
+|        | Dodgson           | Quick, Tideman                       |                  |        |
+|        | Ranked pairs      | Margin, Winning                      |                  |        |
+|        | STAR              |                                      |                  |        |
+|        | Majority judgment |                                      |                  |        |
+|        | D'Hondt           | Sainte-Laguë, Huntington-Hill, Quota |                  |        |
 
 
 1. ✓ means done, ⚠ means in-progress, blank means not started but support is planned.
