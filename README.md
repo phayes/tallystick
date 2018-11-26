@@ -30,7 +30,9 @@ TallyMan is a work-in-progress rust library for tallying votes.
 - [ ] Schulze
 - [ ] Kemeny–Young
 - [ ] Minimax
-- [ ] Borda (Nanson, Baldwin)
+- [X] Borda
+  - [ ] Nanson
+  - [ ] Baldwin
 - [ ] Dodgson
 - [ ] Ranked pairs
 - [ ] STAR

@@ -68,6 +68,8 @@ pub mod stv;
 pub mod condorcet;
 
 
+pub mod borda;
+
 // Common Data Structures
 // ----------------------
 mod result;
