@@ -1,6 +1,7 @@
 # tallyman
 
 [![Build Status](https://travis-ci.org/phayes/tallyman.svg?branch=master)](https://travis-ci.org/phayes/tallyman)
+[![codecov](https://codecov.io/gh/phayes/tallyman/branch/master/graph/badge.svg)](https://codecov.io/gh/phayes/tallyman)
 
 
 tallyman is a work-in-progress rust library for tallying votes.
