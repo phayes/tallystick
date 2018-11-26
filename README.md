@@ -28,7 +28,7 @@ tallyman is a work-in-progress rust library for tallying votes.
 | ✓      | Plurality (FPTP)  |                                      | 100 million v/s  | First Past the Post       |
 | ⚠      | Score             |                                      |                  |                           |
 | ⚠      | Approval          |                                      |                  |                           |
-| ⚠      | STV               | Droop, Hagenbach-Bischoff, Hare      | 3 million v/s    | Single Transferalble Vote |
+| ⚠      | STV               | Droop, Hagenbach-Bischoff, Hare      | 3 million v/s    | Single Transferable Vote  |
 |        | CPO-STV           |                                      |                  |                           |
 |        | Instant Runoff    |                                      |                  |                           |
 |        | Contingent        |                                      |                  |                           |
