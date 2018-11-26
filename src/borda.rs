@@ -2,7 +2,8 @@ use std::hash::Hash;
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use num_traits::Num;
-use num_traits::cast::NumCast;
+use num_traits::NumCast;
+use super::Numeric;
 use std::ops::AddAssign;
 use super::result::RankedWinners;
 use super::plurality::Tally as PluralityTally;
@@ -91,11 +92,16 @@ pub enum Variant {
 
 impl Variant {
   // TODO: Panic if we are using Dowdall without a Float C, specialization?
-  pub fn points<C: Num + NumCast>(&self, candidate_position: usize, num_candidates: usize, num_marked: usize) -> C {
+  pub fn points<C: Numeric + Num + NumCast>(&self, candidate_position: usize, num_candidates: usize, num_marked: usize) -> C {
     match self {
       Variant::Borda => C::from(num_candidates - candidate_position -1).unwrap(),
       Variant::ClassicBorda => C::from(num_candidates - candidate_position).unwrap(),
-      Variant::Dowdall => C::from(num_candidates).unwrap() / C::from(candidate_position + 1).unwrap(),
+      Variant::Dowdall => {
+        if !C::fraction() {
+          panic!("tallyman::borda::Variant::Dowdall cannot be used with an integer count type. Please use a float or a rational.")
+        }
+        C::from(num_candidates).unwrap() / C::from(candidate_position + 1).unwrap()
+      },
       Variant::ModifiedBorda => C::from(num_marked - candidate_position -1).unwrap(),
       Variant::ModifiedClassicBorda => C::from(num_marked - candidate_position).unwrap(),
     }

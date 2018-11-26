@@ -1,5 +1,5 @@
+use super::Numeric;
 use num_traits::Num;
-use num_traits::Float;
 
 /// A quota defines how many votes are required to win an election in relation to the total number of votes cast.
 pub enum Quota<C> {
@@ -56,18 +56,24 @@ pub enum Quota<C> {
     Static(C)
 }
 
-// TODO: Fix this for float-types. Right now this isn't calling floor() for Droop.
-impl<C: Num + Clone> Quota<C> {
+impl<C: Numeric + Num + Clone> Quota<C> {
   /// Compute the threshold needed to be elected for the given quota.
   /// 
   /// Note that total-votes should be the number of votes counted in the tally.
   /// It should not include invalid votes that were not added the tally.
   /// For weighted tallies, it should be the sum of all weights.
+  /// 
+  /// # Panics
+  /// This method will panic if `Quota::Hagenbach` is used with an integer (non Real) count type.
   pub fn threshold(&self, total_votes: C, num_winners: C) -> C {
     match self {
-      // TODO: Do some generic wizardry here to call .floor() on Float types for Droop
-      Quota::Droop => (total_votes / (num_winners + C::one())) + C::one(),
-      Quota::Hagenbach => total_votes / (num_winners + C::one()),
+      Quota::Droop => (total_votes / (num_winners + C::one())).floor() + C::one(),
+      Quota::Hagenbach => {
+        if !C::fraction() {
+          panic!("tallyman::Quota::Hagenbach cannot be used with an integer count type. Please use a float or a rational.")
+        }
+        total_votes / (num_winners + C::one())
+      },
       Quota::Hare => total_votes / num_winners,
       Quota::Imperiali => total_votes / (num_winners + C::one() + C::one()),
       Quota::Static(x) => x.clone(),
@@ -97,14 +103,6 @@ mod tests {
       assert!(Quota::Droop.threshold(101, 2) == 34);
       assert!(Quota::Droop.threshold(102, 2) == 35);
       
-      assert!(Quota::Hagenbach.threshold(100, 1) == 50);
-      assert!(Quota::Hagenbach.threshold(101, 1) == 50); // 50.5 rounded down because integer
-      assert!(Quota::Hagenbach.threshold(102, 1) == 51);
-
-      assert!(Quota::Hagenbach.threshold(100, 2) == 33); // 33.333... rounded down because integer
-      assert!(Quota::Hagenbach.threshold(101, 2) == 33); // 33.666... rounded down because integer
-      assert!(Quota::Hagenbach.threshold(102, 2) == 34);
-      
       assert!(Quota::Hare.threshold(100, 1) == 100);
       assert!(Quota::Hare.threshold(101, 1) == 101);
       assert!(Quota::Hare.threshold(102, 1) == 102);
@@ -128,11 +126,11 @@ mod tests {
       let thirty_three_point_sixes = 33.0 + (2.0 / 3.0);  // 33.666...
 
       assert!(Quota::Droop.threshold(100.0, 1.0) == 51.0);
-      // assert!(Quota::Droop.threshold(101.0, 1.0) == 51.0); // Broken, not calling .floor() on floats
+      assert!(Quota::Droop.threshold(101.0, 1.0) == 51.0);
       assert!(Quota::Droop.threshold(102.0, 1.0) == 52.0);
 
-      // assert!(Quota::Droop.threshold(100.0, 2.0) == 34.0); // Broken, not calling .floor() on floats
-      // assert!(Quota::Droop.threshold(101.0, 2.0) == 34.0); // Broken, not calling .floor() on floats
+      assert!(Quota::Droop.threshold(100.0, 2.0) == 34.0);
+      assert!(Quota::Droop.threshold(101.0, 2.0) == 34.0);
       assert!(Quota::Droop.threshold(102.0, 2.0) == 35.0);
       
       assert!(Quota::Hagenbach.threshold(100.0, 1.0) == 50.0);
@@ -158,5 +156,18 @@ mod tests {
       assert!(Quota::Imperiali.threshold(100.0, 2.0) == 25.00);
       assert!(Quota::Imperiali.threshold(101.0, 2.0) == 25.25);
       assert!(Quota::Imperiali.threshold(102.0, 2.0) == 25.50);
+    }
+
+    #[test]
+    #[should_panic]
+    fn quota_panic_test() {
+      // Hagenbach should panic when using integers
+      assert!(Quota::Hagenbach.threshold(100, 1) == 50);
+      assert!(Quota::Hagenbach.threshold(101, 1) == 50);
+      assert!(Quota::Hagenbach.threshold(102, 1) == 51);
+
+      assert!(Quota::Hagenbach.threshold(100, 2) == 33);
+      assert!(Quota::Hagenbach.threshold(101, 2) == 33);
+      assert!(Quota::Hagenbach.threshold(102, 2) == 34);
     }
 }
