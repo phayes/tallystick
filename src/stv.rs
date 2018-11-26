@@ -24,7 +24,7 @@ pub struct Tally<T, C>
 {
     running_total: HashMap<T, Vec<WeightedVote<T, C>>>,
     num_winners: u32,
-    quota: Quota,
+    quota: Quota<C>,
     expected_votes: Option<usize> // Expected votes *per candidate*.
 }
 
@@ -33,7 +33,7 @@ impl<T, C> Tally<T, C>
           C: Copy + PartialOrd + AddAssign + Num + NumCast // vote count type
 {
 
-    pub fn new(num_winners: u32, quota: Quota) -> Self {
+    pub fn new(num_winners: u32, quota: Quota<C>) -> Self {
         return Tally {
             running_total: HashMap::new(),
             num_winners: num_winners,
@@ -42,7 +42,7 @@ impl<T, C> Tally<T, C>
         };
     }
 
-    pub fn with_capacity(num_winners: u32, quota: Quota, expected_candidates: usize, expected_votes: usize) -> Self {
+    pub fn with_capacity(num_winners: u32, quota: Quota<C>, expected_candidates: usize, expected_votes: usize) -> Self {
         return Tally {
             running_total: HashMap::with_capacity(expected_candidates),
             num_winners: num_winners,

@@ -2,7 +2,7 @@ use num_traits::Num;
 use num_traits::Float;
 
 /// A quota defines how many votes are required to win an election in relation to the total number of votes cast.
-pub enum Quota {
+pub enum Quota<C> {
 
     /// Droop quota. It is defined as:
     /// 
@@ -48,23 +48,29 @@ pub enum Quota {
     /// It is rarely used and not recommended. 
     /// 
     /// See [wikipedia](https://en.wikipedia.org/wiki/Imperiali_quota) for more details.
-    Imperiali
+    Imperiali,
+
+    /// Statically defined quota.
+    /// 
+    /// Useful for oddball custom tallies with custom quotas.
+    Static(C)
 }
 
 // TODO: Fix this for float-types. Right now this isn't calling floor() for Droop.
-impl Quota {
+impl<C: Num + Clone> Quota<C> {
   /// Compute the threshold needed to be elected for the given quota.
   /// 
   /// Note that total-votes should be the number of votes counted in the tally.
   /// It should not include invalid votes that were not added the tally.
   /// For weighted tallies, it should be the sum of all weights.
-  pub fn threshold<C: Num>(&self, total_votes: C, num_winners: C) -> C {
+  pub fn threshold(&self, total_votes: C, num_winners: C) -> C {
     match self {
       // TODO: Do some generic wizardry here to call .floor() on Float types for Droop
       Quota::Droop => (total_votes / (num_winners + C::one())) + C::one(),
       Quota::Hagenbach => total_votes / (num_winners + C::one()),
       Quota::Hare => total_votes / num_winners,
-      Quota::Imperiali => total_votes / (num_winners + C::one() + C::one())
+      Quota::Imperiali => total_votes / (num_winners + C::one() + C::one()),
+      Quota::Static(x) => x.clone(),
     }
   }
 }
@@ -76,6 +82,11 @@ mod tests {
 
     #[test]
     fn quota_test() {
+      // Static
+      // ------
+      assert!(Quota::Static(50).threshold(100, 1) == 50);
+      assert!(Quota::Static(50).threshold(101, 1) == 50);
+
       // Integers
       // --------
       assert!(Quota::Droop.threshold(100, 1) == 51);
