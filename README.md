@@ -48,7 +48,5 @@ tallyman is a work-in-progress rust library for tallying votes.
 
 
 1. ✓ means done, ⚠ means in-progress, blank means not started but support is planned.
-2. Performance is measured in votes tallied per second. Benchmarked on a 2017 Macbook Pro.
-
-
+2. Single threaded performance measured in votes tallied per second. Benchmarked on a 2017 Macbook Pro.
 
