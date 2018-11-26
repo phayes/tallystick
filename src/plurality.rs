@@ -185,5 +185,17 @@ mod tests {
         assert_eq!(winners.contains(&1), false);
         assert_eq!(winners.contains(&2), false);
         assert_eq!(winners.contains(&1000), false);
+
+
+        // Create an election with capacity
+        let mut tally = DefaultTally::with_capacity(1, 2);
+        let candidate_id_1 = 123;
+        let candidate_id_2 = 456;
+        tally.add_ref(&candidate_id_1);
+        tally.add_ref(&candidate_id_2);
+
+        let winners = tally.winners();
+        assert_eq!(winners.contains(&candidate_id_1), true);
+        assert_eq!(winners.contains(&candidate_id_2), true);
     }
 }
