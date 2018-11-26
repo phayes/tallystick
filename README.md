@@ -1,6 +1,9 @@
-# TallyMan
+# tallyman
 
-TallyMan is a work-in-progress rust library for tallying votes.
+[![Build Status](https://travis-ci.org/phayes/tallyman.svg?branch=master)](https://travis-ci.org/phayes/tallyman)
+
+
+tallyman is a work-in-progress rust library for tallying votes.
 
 *Current state is very unstable. It is not currently recommended for use. See checkboxes below for a list of features that are complete.*
 
