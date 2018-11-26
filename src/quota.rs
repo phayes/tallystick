@@ -50,7 +50,7 @@ pub enum Quota<C> {
     /// See [wikipedia](https://en.wikipedia.org/wiki/Imperiali_quota) for more details.
     Imperiali,
 
-    /// Statically defined quota.
+    /// Static quota that does not vary with either the total votes nor the total seats.
     /// 
     /// Useful for oddball custom tallies with custom quotas.
     Static(C)
