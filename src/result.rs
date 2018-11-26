@@ -1,6 +1,8 @@
 use std::ops::RangeBounds;
 use num_traits::Num;
 use std::cmp::Ordering::Equal;
+use derive_more::{From, Index, IndexMut};
+
 
 // A RankedWinner is a winner in an election, ranked ascending (starting from zero).
 // A ranked-winner with a lower rank beats a ranked-winner with a higher rank.
