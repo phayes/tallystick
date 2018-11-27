@@ -53,10 +53,7 @@ impl<T: Clone + Eq> RankedWinners<T> {
 
   /// Iterate over all winner->rank pairs.
   pub fn iter(&self) -> IterWinners<'_, T> {
-    IterWinners {
-      inner: self,
-      pos: 0,
-    }
+    IterWinners { inner: self, pos: 0 }
   }
 
   /// Check if the given candidate exists in the set of ranked-winners.
@@ -180,7 +177,7 @@ impl<T: Clone + Eq, C: Copy + Num + PartialOrd> CountedCandidates<T, C> {
     self.0.len()
   }
 
-  /// Transform winners into a vector of RankedWinners.
+  /// Transform candidates into a vector of RankedWinners.
   /// Limit the number of winners by "num_winners", returned number may be over this if there is a tie
   /// Set num_winners to `0` for no limit.
   pub(crate) fn into_ranked(mut self, num_winners: u32) -> RankedWinners<T> {
@@ -208,6 +205,12 @@ impl<T: Clone + Eq, C: Copy + Num + PartialOrd> CountedCandidates<T, C> {
     return ranked;
   }
 
+  // Transform into a vector
+  pub(crate) fn into_vec(mut self) -> Vec<(T, C)> {
+    self.sort();
+    return self.0;
+  }
+
   // Push a new winner onto the end of of the list of winners
   // Make sure to call sort() before passing the Winners back to the user.
   pub(crate) fn push(&mut self, candidate: T, count: C) {
@@ -218,8 +221,6 @@ impl<T: Clone + Eq, C: Copy + Num + PartialOrd> CountedCandidates<T, C> {
   // TODO: better handling of uncomparible (eg NaN) types
   //       one possibility is to check ordering against ::zero(), and order the offending value last.
   pub(crate) fn sort(&mut self) {
-    self
-      .0
-      .sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(Equal));
+    self.0.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(Equal));
   }
 }

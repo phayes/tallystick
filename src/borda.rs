@@ -1,4 +1,5 @@
 use super::plurality::Tally as PluralityTally;
+use super::result::CountedCandidates;
 use super::result::RankedWinners;
 use super::Numeric;
 use hashbrown::HashMap;
@@ -46,9 +47,9 @@ pub enum Variant {
   /// An important difference of this method from the others is that the number of points assigned to each preference does not depend on the number of candidates.
   /// Each candidate is given points according to:
   ///
-  /// ```number-candidates / (candidate-position + 1)```
+  /// ```1 / (candidate-position + 1)```
   ///
-  /// *If Dowdall is selected, tallyman will **panic** if an integer count type is used in the tally. This variant should only be used with a float or rational tally.*
+  /// If Dowdall is selected, tallyman will panic if an integer count type is used in the tally. This variant should only be used with a float or rational tally.
   ///
   /// Example point allocation for a single ballot:
   ///
@@ -61,11 +62,11 @@ pub enum Variant {
   ///
   /// Example:
   /// ```
-  /// use tallyman::borda::Tally;
+  /// use tallyman::borda::BordaTally;
   /// use tallyman::borda::Variant;
   ///
   /// // Note use of `f64` as our count type.
-  /// let mut tally = Tally::<&str, f64>::new(1, Variant::Dowdall);
+  /// let mut tally = BordaTally::<&str, f64>::new(1, Variant::Dowdall);
   /// tally.add(vec!["Barak Obama", "John McCain"]);
   /// tally.add(vec!["Barak Obama", "Mitt Romney"]);
   /// let _winners = tally.winners();
@@ -90,12 +91,7 @@ pub enum Variant {
 
 impl Variant {
   // TODO: Panic if we are using Dowdall without a Float C, specialization?
-  pub fn points<C: Numeric + Num + NumCast>(
-    &self,
-    candidate_position: usize,
-    num_candidates: usize,
-    num_marked: usize,
-  ) -> C {
+  pub fn points<C: Numeric + Num + NumCast>(&self, candidate_position: usize, num_candidates: usize, num_marked: usize) -> C {
     match self {
       Variant::Borda => C::from(num_candidates - candidate_position - 1).unwrap(),
       Variant::ClassicBorda => C::from(num_candidates - candidate_position).unwrap(),
@@ -103,7 +99,7 @@ impl Variant {
         if !C::fraction() {
           panic!("tallyman::borda::Variant::Dowdall cannot be used with an integer count type. Please use a float or a rational.")
         }
-        C::from(num_candidates).unwrap() / C::from(candidate_position + 1).unwrap()
+        C::one() / C::from(candidate_position + 1).unwrap()
       }
       Variant::ModifiedBorda => C::from(num_marked - candidate_position - 1).unwrap(),
       Variant::ModifiedClassicBorda => C::from(num_marked - candidate_position).unwrap(),
@@ -111,9 +107,9 @@ impl Variant {
   }
 }
 
-pub type DefaultTally<T> = Tally<T, u64>;
+pub type DefaultBordaTally<T> = BordaTally<T, u64>;
 
-pub struct Tally<T, C = u64>
+pub struct BordaTally<T, C = u64>
 where
   T: Eq + Clone + Hash,                             // Candidate
   C: Copy + PartialOrd + AddAssign + Num + NumCast, // Vote count type
@@ -124,13 +120,13 @@ where
   variant: Variant,
 }
 
-impl<T, C> Tally<T, C>
+impl<T, C> BordaTally<T, C>
 where
   T: Eq + Clone + Hash,                             // Candidate
   C: Copy + PartialOrd + AddAssign + Num + NumCast, // Vote count type
 {
   pub fn new(num_winners: u32, variant: Variant) -> Self {
-    return Tally {
+    return BordaTally {
       running_total: HashMap::new(),
       candidates: HashSet::new(),
       num_winners: num_winners,
@@ -169,18 +165,25 @@ where
   }
 
   pub fn winners(&self) -> RankedWinners<T> {
+    let mut counted = CountedCandidates::new();
+    for (candidate, votecount) in self.totals().iter() {
+      counted.push(candidate.clone(), *votecount);
+    }
+    return counted.into_ranked(self.num_winners);
+  }
+
+  pub fn totals(&self) -> Vec<(T, C)> {
     // Make a little plurality tally and use borda points as weights
     let mut plurality = PluralityTally::with_capacity(self.num_winners, self.candidates.len());
     for (selection, votecount) in self.running_total.iter() {
       let num_marked = selection.len();
       for (position, candidate) in selection.iter().enumerate() {
-        let points: C = self
-          .variant
-          .points(position, self.candidates.len(), num_marked);
+        let points: C = self.variant.points(position, self.candidates.len(), num_marked);
         plurality.add_weighted_ref(candidate, *votecount * points);
       }
     }
-    return plurality.winners();
+
+    return plurality.totals();
   }
 }
 
@@ -191,7 +194,7 @@ where
   T: Eq + Clone + Hash,                             // Candidate
   C: Copy + PartialOrd + AddAssign + Num + NumCast, // Vote count type
 {
-  borda: Tally<T, C>,
+  borda: BordaTally<T, C>,
 }
 
 pub type DefaultBaldwinTally<T> = BaldwinTally<T, u64>;
@@ -201,7 +204,7 @@ where
   T: Eq + Clone + Hash,                             // Candidate
   C: Copy + PartialOrd + AddAssign + Num + NumCast, // Vote count type
 {
-  borda: Tally<T, C>,
+  borda: BordaTally<T, C>,
 }
 
 #[cfg(test)]
@@ -209,5 +212,49 @@ mod tests {
   use super::*;
 
   #[test]
-  fn borda_test() {}
+  fn borda_test() {
+    // From: https://en.wikipedia.org/wiki/Borda_count
+    let mut borda_tally = DefaultBordaTally::new(1, Variant::Borda);
+    borda_tally.add_weighted(vec!["Andrew", "Catherine", "Brian", "David"], 51);
+    borda_tally.add_weighted(vec!["Catherine", "Brian", "David", "Andrew"], 5);
+    borda_tally.add_weighted(vec!["Brian", "Catherine", "David", "Andrew"], 23);
+    borda_tally.add_weighted(vec!["David", "Catherine", "Brian", "Andrew"], 21);
+
+    assert!(borda_tally.totals() == vec![("Catherine", 205), ("Andrew", 153), ("Brian", 151), ("David", 91)]);
+    assert!(borda_tally.winners().into_unranked() == vec!["Catherine"]);
+
+    let mut classic_tally = DefaultBordaTally::new(1, Variant::ClassicBorda);
+    classic_tally.add_weighted(vec!["Andrew", "Catherine", "Brian", "David"], 51);
+    classic_tally.add_weighted(vec!["Catherine", "Brian", "David", "Andrew"], 5);
+    classic_tally.add_weighted(vec!["Brian", "Catherine", "David", "Andrew"], 23);
+    classic_tally.add_weighted(vec!["David", "Catherine", "Brian", "Andrew"], 21);
+
+    assert!(classic_tally.totals() == vec![("Catherine", 305), ("Andrew", 253), ("Brian", 251), ("David", 191)]);
+    assert!(classic_tally.winners().into_unranked() == vec!["Catherine"]);
+
+    let mut dowdall_tally = BordaTally::<&str, f64>::new(1, Variant::Dowdall);
+    dowdall_tally.add_weighted(vec!["Andrew", "Catherine", "Brian", "David"], 51.0);
+    dowdall_tally.add_weighted(vec!["Catherine", "Brian", "David", "Andrew"], 5.0);
+    dowdall_tally.add_weighted(vec!["Brian", "Catherine", "David", "Andrew"], 23.0);
+    dowdall_tally.add_weighted(vec!["David", "Catherine", "Brian", "Andrew"], 21.0);
+
+    assert!(
+      dowdall_tally.totals()
+        == vec![
+          ("Andrew", 63.25),
+          ("Catherine", 52.5),
+          ("Brian", 49.5),
+          ("David", 43.08 + (0.01 / 3.0))
+        ]
+    );
+    assert!(dowdall_tally.winners().into_unranked() == vec!["Andrew"]);
+
+    let mut tally = DefaultBordaTally::new(1, Variant::Borda);
+    tally.add_weighted(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"], 42);
+    tally.add_weighted(vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"], 26);
+    tally.add_weighted(vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"], 15);
+    tally.add_weighted(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"], 17);
+    assert!(tally.totals() == vec![("Nashville", 194), ("Chattanooga", 173), ("Memphis", 126), ("Knoxville", 107)]);
+    assert!(tally.winners().into_unranked() == vec!["Nashville"]);
+  }
 }

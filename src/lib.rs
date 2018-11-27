@@ -3,6 +3,7 @@
 //! ## Compatibility
 //!
 //! The `tallyman` crate currently needs nightly rust. It will move to stable when [trait specialization](https://github.com/rust-lang/rust/issues/31844) is stabilized.
+//!
 
 #![warn(rust_2018_idioms)]
 #![warn(missing_docs)]

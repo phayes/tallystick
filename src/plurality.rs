@@ -140,6 +140,14 @@ where
         }
         return counted.into_ranked(self.num_winners);
     }
+
+    pub fn totals(&self) -> Vec<(T, C)> {
+        let mut counted = CountedCandidates::new();
+        for (candidate, votecount) in self.running_total.iter() {
+            counted.push(candidate.clone(), *votecount);
+        }
+        return counted.into_vec();
+    }
 }
 
 #[cfg(test)]
