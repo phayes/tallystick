@@ -1,4 +1,4 @@
-use super::plurality::Tally as PluralityTally;
+use super::plurality::PluralityTally;
 use super::result::CountedCandidates;
 use super::result::RankedWinners;
 use super::Numeric;

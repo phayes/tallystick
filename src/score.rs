@@ -3,7 +3,7 @@ use num_traits::Num;
 use std::hash::Hash;
 use std::ops::AddAssign;
 
-use super::plurality;
+use super::plurality::PluralityTally;
 
 pub type DefaultTally<T> = Tally<T, u64>;
 
@@ -12,7 +12,7 @@ where
     T: Eq + Clone + Hash,                      // Candidate
     C: Copy + Ord + AddAssign + Num + NumCast, // vote count type
 {
-    plurality: plurality::Tally<T, C>,
+    plurality: PluralityTally<T, C>,
 }
 
 impl<T, C> Tally<T, C>
@@ -22,7 +22,7 @@ where
 {
     pub fn new(num_winners: u32) -> Self {
         return Tally {
-            plurality: plurality::Tally::new(num_winners),
+            plurality: PluralityTally::new(num_winners),
         };
     }
 

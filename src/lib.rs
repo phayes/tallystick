@@ -16,10 +16,10 @@
 ///
 /// # Example
 /// ```
-///    use tallyman::plurality::DefaultTally;
+///    use tallyman::plurality::DefaultPluralityTally;
 ///
 ///    // Election between Alice, Bob, and Cir with two winners.
-///    let mut tally = DefaultTally::new(2);
+///    let mut tally = DefaultPluralityTally::new(2);
 ///    tally.add("Alice");
 ///    tally.add("Cir");
 ///    tally.add("Bob");
