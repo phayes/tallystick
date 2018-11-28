@@ -187,6 +187,7 @@ where
         return self.get_counted().into_ranked(0).into_vec();
     }
 
+    // Get the running total as CountedCandidates.
     fn get_counted(&self) -> CountedCandidates<T, C> {
         let mut counted = CountedCandidates::new();
         for (candidate, votecount) in self.running_total.iter() {
@@ -211,8 +212,11 @@ mod tests {
         tally.add("Alice");
         tally.add("Bob");
 
-        let winners = tally.winners();
+        assert_eq!(tally.candidates().len(), 3);
+        assert_eq!(tally.totals(), vec![("Alice", 3), ("Bob", 2), ("Cir", 1)]);
+        assert_eq!(tally.ranked(), vec![("Alice", 0), ("Bob", 1), ("Cir", 2)]);
 
+        let winners = tally.winners();
         assert_eq!(winners.contains(&"Alice"), true);
         assert_eq!(winners.contains(&"Bob"), true);
         assert_eq!(winners.contains(&"Cir"), false);
