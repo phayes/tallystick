@@ -160,11 +160,5 @@ mod tests {
   fn quota_panic_test() {
     // Hagenbach should panic when using integers
     assert!(Quota::Hagenbach.threshold(100, 1) == 50);
-    assert!(Quota::Hagenbach.threshold(101, 1) == 50);
-    assert!(Quota::Hagenbach.threshold(102, 1) == 51);
-
-    assert!(Quota::Hagenbach.threshold(100, 2) == 33);
-    assert!(Quota::Hagenbach.threshold(101, 2) == 33);
-    assert!(Quota::Hagenbach.threshold(102, 2) == 34);
   }
 }
