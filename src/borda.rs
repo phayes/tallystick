@@ -399,6 +399,8 @@ mod tests {
     tally.add(vec!["Alice", "Bob"])?;
     tally.add(vec!["Bob", "Carlos"])?;
     assert!(tally.totals() == vec![("Alice", 5), ("Bob", 5), ("Carlos", 2)]);
+    assert!(tally.ranked() == vec![("Alice", 0), ("Bob", 0), ("Carlos", 1)]);
+    assert!(tally.candidates().len() == 3);
 
     // Testing custom - just assign every candidate a "1" turning this borda into appproval voting.
     let boxed_func = Box::new(|_candidate_position, _num_candidates, _num_marked| 1);
@@ -407,14 +409,18 @@ mod tests {
     tally.add(vec!["Alice", "Bob"])?;
     tally.add(vec!["Bob", "Carlos"])?;
     assert!(tally.totals() == vec![("Bob", 3), ("Alice", 2), ("Carlos", 2)]);
+    assert!(tally.ranked() == vec![("Bob", 0), ("Alice", 1), ("Carlos", 1)]);
+    assert!(tally.candidates().len() == 3);
 
     // Testin adding ref
     let vote_1 = vec!["Alice", "Bob", "Carlos"];
     let vote_2 = vec!["Alice", "Bob"];
-    let mut tally = DefaultBordaTally::new(1, Variant::Borda);
+    let mut tally = DefaultBordaTally::with_capacity(1, Variant::Borda, 3);
     tally.add_ref(&vote_1)?;
     tally.add_ref(&vote_2)?;
     assert!(tally.totals() == vec![("Alice", 4), ("Bob", 2), ("Carlos", 0)]);
+    assert!(tally.ranked() == vec![("Alice", 0), ("Bob", 1), ("Carlos", 2)]);
+    assert!(tally.candidates().len() == 3);
 
     Ok(())
   }
