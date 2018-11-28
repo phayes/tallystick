@@ -37,7 +37,7 @@ tallyman is a work-in-progress rust library for tallying votes.
 |        | Schulze           | Winning, Margin, Ratio               |                  |                           |
 |        | Kemeny–Young      |                                      |                  |                           |
 |        | Minimax           |                                      |                  |                           |
-| ⚠      | Borda             | Classic, Dowdall, Modified           |                  |                           |
+| ✓      | Borda             | Classic, Dowdall, Modified           |                  |                           |
 |        | Borda - Nanson    | Classic, Dowdall, Modified           |                  |                           |
 |        | Borda - Baldwin   | Classic, Dowdall, Modified           |                  |                           |
 |        | Dodgson           | Quick, Tideman                       |                  |                           |
