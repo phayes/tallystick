@@ -12,7 +12,7 @@ use std::hash::Hash;
 use std::ops::AddAssign;
 
 /// Specifies method used to assign points to ranked candidates.
-pub enum Variant {
+pub enum Variant<C> {
   /// The standard Borda count where each candidate is assigned a number of points equal to the number of candidates ranked lower than them.
   /// It is known as the "Starting at 0" Borda count since the least-significantly ranked candidate is given zero points.
   /// Each candidate is given points according to:
@@ -76,22 +76,36 @@ pub enum Variant {
   Dowdall,
 
   /// In a modified Borda count, the number of points given for a voter's first and subsequent preferences is determined by the total number of candidates they have actually ranked, rather than the total number listed.
-  /// This is to say, typically, on a ballot of `n` candidates, if a voter casts only `m` preferences (where `n ≥ m ≥ 1`), a first preference gets `m - 1` points, a second preference `m – 2` points, and so on.
+  /// This is to say, typically, on a ballot of `n` candidates, if a voter casts only `m` preferences (where `n ≥ m ≥ 1`), a first preference gets `m` points, a second preference `m – 1` points, and so on.
   /// Modified Borda counts are used to counteract the problem of [bullet voting](https://en.wikipedia.org/wiki/Bullet_voting).
-  /// Each candidate is given points according to:
-  ///
-  /// ```number-marked - candidate-position - 1```
-  ModifiedBorda,
-
-  /// A modified classic Borda count that gives the least significantly ranked candidate 1 point.
-  /// Like [`ModifiedBorda`](#variant.ModifiedBorda), it only assigns points according to the number of marked candidates on each ballot, instead of the total number of candidates.
   /// Each candidate is given points according to:
   ///
   /// ```number-marked - candidate-position```
   ModifiedClassicBorda,
+
+  /// Custom point assignment using a boxed closure. Takes a closure of the form:
+  ///
+  /// ```fn(candidate_position: usize, num_candidates: usize, num_marked: usize) -> C```
+  ///
+  /// Example:
+  /// ```
+  /// use tallyman::borda::BordaTally;
+  /// use tallyman::borda::Variant;
+  ///
+  /// let boxed_func = Box::new(|candidate_position, num_candidates, num_marked| {
+  ///   if num_marked == 1 {
+  ///     return 1;
+  ///   }
+  ///   else {
+  ///     return num_marked - candidate_position - 1;
+  ///   }
+  /// });
+  /// let mut tally = BordaTally::<&str, usize>::new(1, Variant::Custom(boxed_func));
+  /// ```
+  Custom(Box<dyn Fn(usize, usize, usize) -> C>),
 }
 
-impl Variant {
+impl<C: Numeric + Num + NumCast> Variant<C> {
   /// Get the number of points for a candidate at a certain position on a ballot.
   ///
   /// - `candidate_position` is the position of the candidate on the marked ballot. It is `0` for the 1st candidate, `1` for the second candidate etc.
@@ -99,7 +113,7 @@ impl Variant {
   /// - `num_marked` is the total number of candidates marked on the ballot.
   ///
   /// This method will panic if using [`Variant::Dowdall`](#variant.Dowdall) with an integer based vote-count type.
-  pub fn points<C: Numeric + Num + NumCast>(&self, candidate_position: usize, num_candidates: usize, num_marked: usize) -> C {
+  pub fn points(&self, candidate_position: usize, num_candidates: usize, num_marked: usize) -> C {
     match self {
       Variant::Borda => C::from(num_candidates - candidate_position - 1).unwrap(),
       Variant::ClassicBorda => C::from(num_candidates - candidate_position).unwrap(),
@@ -109,8 +123,8 @@ impl Variant {
         }
         C::one() / C::from(candidate_position + 1).unwrap()
       }
-      Variant::ModifiedBorda => C::from(num_marked - candidate_position - 1).unwrap(),
       Variant::ModifiedClassicBorda => C::from(num_marked - candidate_position).unwrap(),
+      Variant::Custom(boxed_func) => boxed_func(candidate_position, num_candidates, num_marked),
     }
   }
 }
@@ -171,7 +185,7 @@ where
   running_total: HashMap<Vec<T>, C>,
   candidates: HashSet<T>,
   num_winners: u32,
-  variant: Variant,
+  variant: Variant<C>,
 }
 
 impl<T, C> BordaTally<T, C>
@@ -183,7 +197,7 @@ where
   ///
   /// If there is a tie, the number of winners might be more than `num_winners`.
   /// (See [`winners()`](#method.winners) for more information on ties.)
-  pub fn new(num_winners: u32, variant: Variant) -> Self {
+  pub fn new(num_winners: u32, variant: Variant<C>) -> Self {
     return BordaTally {
       running_total: HashMap::new(),
       candidates: HashSet::new(),
@@ -193,7 +207,7 @@ where
   }
 
   /// Create a new `BordaTally` with the given number of winners, and number of expected candidates.
-  pub fn with_capacity(num_winners: u32, variant: Variant, expected_candidates: usize) -> Self {
+  pub fn with_capacity(num_winners: u32, variant: Variant<C>, expected_candidates: usize) -> Self {
     return BordaTally {
       running_total: HashMap::with_capacity(expected_candidates),
       candidates: HashSet::with_capacity(expected_candidates),
@@ -380,17 +394,19 @@ mod tests {
     assert!(tally.winners().into_unranked() == vec!["Nashville"]);
 
     // Testing Modified Borda
-    let mut tally = DefaultBordaTally::new(1, Variant::ModifiedBorda);
-    tally.add(vec!["Alice", "Bob", "Carlos"])?;
-    tally.add(vec!["Alice", "Bob"])?;
-    tally.add(vec!["Bob", "Carlos"])?;
-    assert!(tally.totals() == vec![("Alice", 3), ("Bob", 2), ("Carlos", 0)]);
-
     let mut tally = DefaultBordaTally::new(1, Variant::ModifiedClassicBorda);
     tally.add(vec!["Alice", "Bob", "Carlos"])?;
     tally.add(vec!["Alice", "Bob"])?;
     tally.add(vec!["Bob", "Carlos"])?;
     assert!(tally.totals() == vec![("Alice", 5), ("Bob", 5), ("Carlos", 2)]);
+
+    // Testing custom - just assign every candidate a "1" turning this borda into appproval voting.
+    let boxed_func = Box::new(|_candidate_position, _num_candidates, _num_marked| 1);
+    let mut tally = DefaultBordaTally::new(1, Variant::Custom(boxed_func));
+    tally.add(vec!["Alice", "Bob", "Carlos"])?;
+    tally.add(vec!["Alice", "Bob"])?;
+    tally.add(vec!["Bob", "Carlos"])?;
+    assert!(tally.totals() == vec![("Bob", 3), ("Alice", 2), ("Carlos", 2)]);
 
     // Testin adding ref
     let vote_1 = vec!["Alice", "Bob", "Carlos"];

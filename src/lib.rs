@@ -65,7 +65,7 @@ pub mod condorcet;
 ///    use tallyman::borda::Variant;
 ///
 ///    // Election between Alice, Bob, and Carlos with two winners.
-///    let mut tally = DefaultBordaTally::new(2, Variant::ModifiedBorda);
+///    let mut tally = DefaultBordaTally::new(2, Variant::Borda);
 ///    tally.add(vec!["Alice", "Bob", "Carlos"]);
 ///    tally.add(vec!["Bob", "Carlos", "Alice"]);
 ///    tally.add(vec!["Alice", "Bob", "Carlos"]);
