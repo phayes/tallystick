@@ -98,7 +98,7 @@ impl Variant {
   /// - `num_candidates` is the total number of candidates in this election.
   /// - `num_marked` is the total number of candidates marked on the ballot.
   ///
-  /// This method will panic if using `Dowdall` with an integer based vote-count type.
+  /// This method will panic if using [`Variant::Dowdall`](#variant.Dowdall) with an integer based vote-count type.
   pub fn points<C: Numeric + Num + NumCast>(&self, candidate_position: usize, num_candidates: usize, num_marked: usize) -> C {
     match self {
       Variant::Borda => C::from(num_candidates - candidate_position - 1).unwrap(),
@@ -147,14 +147,14 @@ pub type DefaultBordaTally<T> = BordaTally<T, u64>;
 ///
 /// Generics:
 /// - `T`: The candidate type.
-/// - `C`: The count type. `u64` is recommended, but can be modified to use a different type for counting votes (eg `f64` for fractional vote weights). When using `Variant::Dowdall`, a float, a [`rational`] (https://rust-num.github.io/num/num_rational/index.html), or anyting that implements [`Real`](https://docs.rs/num-traits/0.2.6/num_traits/real/trait.Real.html) must be used.
+/// - `C`: The count type. `u64` is recommended, but can be modified to use a different type for counting votes (eg `f64` for fractional vote weights). If using [`Variant::Dowdall`](enum.Variant.html#variant.Dowdall) then a float, a [`rational`](https://rust-num.github.io/num/num_rational/index.html), or anyting that implements [`Real`](https://docs.rs/num-traits/0.2.6/num_traits/real/trait.Real.html) must be used.
 ///
 /// Example:
 /// ```
 ///    use tallyman::borda::BordaTally;
 ///    use tallyman::borda::Variant;
 ///
-///    // A tally with string candidates, `f64` counting, and a single winner using the Dowall point system.
+///    // A tally with string candidates, `f64` counting, using the Dowall point system.
 ///    let mut tally = BordaTally::<&str, f64>::new(1, Variant::Dowdall);
 ///    tally.add(vec!["Alice", "Bob", "Carlos"]);
 ///    tally.add(vec!["Bob", "Carlos", "Alice"]);
