@@ -87,3 +87,20 @@ pub use crate::quota::Quota;
 
 mod traits;
 pub use crate::traits::Numeric;
+
+mod errors;
+pub use crate::errors::TallyError;
+
+// Common Utility Functions
+// ------------------------
+
+// Check if a vector has a duplicate
+// This is critical for transitive (ranked) votes
+pub(crate) fn check_duplicate<T: PartialEq>(slice: &[T]) -> Result<(), TallyError> {
+  for i in 1..slice.len() {
+    if slice[i..].contains(&slice[i - 1]) {
+      return Err(TallyError::VoteHasDuplicateCandidates);
+    }
+  }
+  Ok(())
+}

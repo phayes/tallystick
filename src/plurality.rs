@@ -63,6 +63,7 @@ where
     C: Copy + PartialOrd + AddAssign + Num + NumCast, // Count type
 {
     /// Create a new `PluralityTally` with the given number of winners.
+    ///
     /// If there is a tie, the number of winners might be more than `num_winners`.
     /// (See [`winners()`](#method.winners) for more information on ties.)
     pub fn new(num_winners: u32) -> Self {
@@ -80,30 +81,30 @@ where
         };
     }
 
-    /// Add a new vote (with a weight of 1)
-    pub fn add(&mut self, selection: T) {
-        self.add_weighted(selection, C::one());
+    /// Add a new vote
+    pub fn add(&mut self, vote: T) {
+        self.add_weighted(vote, C::one());
     }
 
     /// Add a vote by reference.
-    pub fn add_ref(&mut self, selection: &T) {
-        self.add_weighted_ref(selection, C::one());
+    pub fn add_ref(&mut self, vote: &T) {
+        self.add_weighted_ref(vote, C::one());
     }
 
     /// Add a weighted vote.
-    /// By default takes a weight as a `usize` integer, but can be customized by using `CustomTally`.
-    pub fn add_weighted(&mut self, selection: T, weight: C) {
-        *self.running_total.entry(selection).or_insert(C::zero()) += weight;
+    /// By default takes a weight as a `usize` integer, but can be customized by using `PluralityTally` with a custom vote type.
+    pub fn add_weighted(&mut self, vote: T, weight: C) {
+        *self.running_total.entry(vote).or_insert(C::zero()) += weight;
     }
 
     /// Add a weighted vote by reference.
-    pub fn add_weighted_ref(&mut self, selection: &T, weight: C) {
-        if self.running_total.contains_key(&selection) {
-            if let Some(x) = self.running_total.get_mut(&selection) {
+    pub fn add_weighted_ref(&mut self, vote: &T, weight: C) {
+        if self.running_total.contains_key(&vote) {
+            if let Some(x) = self.running_total.get_mut(&vote) {
                 *x += weight;
             }
         } else {
-            self.running_total.insert(selection.clone(), weight);
+            self.running_total.insert(vote.clone(), weight);
         }
     }
 

@@ -1,7 +1,9 @@
+use super::check_duplicate;
 use super::plurality::PluralityTally;
 use super::result::CountedCandidates;
 use super::result::RankedWinners;
 use super::Numeric;
+use super::TallyError;
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use num_traits::Num;
@@ -141,6 +143,26 @@ impl Variant {
 /// ```
 pub type DefaultBordaTally<T> = BordaTally<T, u64>;
 
+/// A generic borda tally.
+///
+/// Generics:
+/// - `T`: The candidate type.
+/// - `C`: The count type. `u64` is recommended, but can be modified to use a different type for counting votes (eg `f64` for fractional vote weights). When using `Variant::Dowdall`, a float, a [`rational`] (https://rust-num.github.io/num/num_rational/index.html), or anyting that implements [`Real`](https://docs.rs/num-traits/0.2.6/num_traits/real/trait.Real.html) must be used.
+///
+/// Example:
+/// ```
+///    use tallyman::borda::BordaTally;
+///    use tallyman::borda::Variant;
+///
+///    // A tally with string candidates, `f64` counting, and a single winner using the Dowall point system.
+///    let mut tally = BordaTally::<&str, f64>::new(1, Variant::Dowdall);
+///    tally.add(vec!["Alice", "Bob", "Carlos"]);
+///    tally.add(vec!["Bob", "Carlos", "Alice"]);
+///    tally.add(vec!["Alice", "Carlos", "Bob"]);
+///    tally.add(vec!["Alice", "Bob", "Carlos"]);
+///
+///    let winners = tally.winners();
+/// ```
 pub struct BordaTally<T, C = u64>
 where
   T: Eq + Clone + Hash,                             // Candidate
@@ -157,6 +179,10 @@ where
   T: Eq + Clone + Hash,                             // Candidate
   C: Copy + PartialOrd + AddAssign + Num + NumCast, // Vote count type
 {
+  /// Create a new `BordaTally` with the given number of winners.
+  ///
+  /// If there is a tie, the number of winners might be more than `num_winners`.
+  /// (See [`winners()`](#method.winners) for more information on ties.)
   pub fn new(num_winners: u32, variant: Variant) -> Self {
     return BordaTally {
       running_total: HashMap::new(),
@@ -166,36 +192,65 @@ where
     };
   }
 
-  pub fn add(&mut self, selection: Vec<T>) {
-    self.add_weighted(selection, C::one());
+  /// Create a new `BordaTally` with the given number of winners, and number of expected candidates.
+  pub fn with_capacity(num_winners: u32, variant: Variant, expected_candidates: usize) -> Self {
+    return BordaTally {
+      running_total: HashMap::with_capacity(expected_candidates),
+      candidates: HashSet::with_capacity(expected_candidates),
+      num_winners: num_winners,
+      variant: variant,
+    };
   }
 
-  pub fn add_ref(&mut self, selection: &[T]) {
-    self.add_weighted_ref(selection, C::one());
+  /// Add a new vote
+  ///
+  /// Votes are represented as a vector of ranked candidates, ordered by preference.
+  /// An error will only be returned if `vote` contains duplicate candidates.
+  pub fn add(&mut self, vote: Vec<T>) -> Result<(), TallyError> {
+    self.add_weighted(vote, C::one())
   }
 
-  pub fn add_weighted(&mut self, selection: Vec<T>, weight: C) {
-    for candidate in selection.iter() {
+  /// Add a new vote by reference
+  pub fn add_ref(&mut self, vote: &[T]) -> Result<(), TallyError> {
+    self.add_weighted_ref(vote, C::one())
+  }
+
+  /// Add a weighted vote.
+  /// By default takes a weight as a `usize` integer, but can be customized by using `BordaTally` with a custom vote type.
+  pub fn add_weighted(&mut self, vote: Vec<T>, weight: C) -> Result<(), TallyError> {
+    check_duplicate(&vote)?;
+
+    for candidate in vote.iter() {
       if !self.candidates.contains(candidate) {
         self.candidates.insert(candidate.clone());
       }
     }
 
-    let entry = self.running_total.entry(selection);
+    let entry = self.running_total.entry(vote);
     *entry.or_insert(C::zero()) += weight;
+
+    Ok(())
   }
 
-  pub fn add_weighted_ref(&mut self, selection: &[T], weight: C) {
-    for candidate in selection.iter() {
+  /// Add a weighted vote by reference
+  pub fn add_weighted_ref(&mut self, vote: &[T], weight: C) -> Result<(), TallyError> {
+    check_duplicate(vote)?;
+
+    for candidate in vote.iter() {
       if !self.candidates.contains(candidate) {
         self.candidates.insert(candidate.clone());
       }
     }
 
-    let entry = self.running_total.entry(selection.to_vec());
+    let entry = self.running_total.entry(vote.to_vec());
     *entry.or_insert(C::zero()) += weight;
+
+    Ok(())
   }
 
+  /// Get a ranked list of winners. Winners with the same rank are tied.
+  /// The number of winners might be greater than the requested `num_winners` if there is a tie.
+  /// In a borda count, the winners are determine by what candidate obtains the most points.
   pub fn winners(&self) -> RankedWinners<T> {
     let mut counted = CountedCandidates::new();
     for (candidate, votecount) in self.totals().iter() {
@@ -204,6 +259,35 @@ where
     return counted.into_ranked(self.num_winners);
   }
 
+  /// Get a ranked list of all candidates. Candidates with the same rank are tied.
+  pub fn ranked(&self) -> Vec<(T, u32)> {
+    let mut counted = CountedCandidates::new();
+    for (candidate, votecount) in self.totals().iter() {
+      counted.push(candidate.clone(), *votecount);
+    }
+    return counted.into_ranked(0).into_vec();
+  }
+
+  /// Get point totals for this tally.
+  ///
+  /// This will return a vector with the number of borda points for each candidate.
+  ///
+  /// # Example
+  /// ```
+  ///    use tallyman::borda::DefaultBordaTally;
+  ///    use tallyman::borda::Variant;
+  ///
+  ///    let mut tally = DefaultBordaTally::new(1, Variant::ClassicBorda);
+  ///    for _ in 0..30 { tally.add(vec!["Alice", "Bob"]).unwrap() }
+  ///    for _ in 0..10 { tally.add(vec!["Bob", "Alice"]).unwrap() }
+  ///
+  ///    for (candidate, num_points) in tally.totals().iter() {
+  ///       println!("{} has {} points", candidate, num_points);
+  ///    }
+  ///    // Prints:
+  ///    //   Alice has 70 points
+  ///    //   Bob has 30 points
+  /// ```
   pub fn totals(&self) -> Vec<(T, C)> {
     // Make a little plurality tally and use borda points as weights
     let mut plurality = PluralityTally::with_capacity(self.num_winners, self.candidates.len());
@@ -216,6 +300,12 @@ where
     }
 
     return plurality.totals();
+  }
+
+  /// Get a list of all candidates seen by this tally.
+  /// Candidates are returned in no particular order.
+  pub fn candidates(&self) -> Vec<T> {
+    return self.candidates.iter().map(|x| x.clone()).collect();
   }
 }
 
@@ -244,31 +334,31 @@ mod tests {
   use super::*;
 
   #[test]
-  fn borda_test() {
+  fn borda_test() -> Result<(), TallyError> {
     // From: https://en.wikipedia.org/wiki/Borda_count
     let mut borda_tally = DefaultBordaTally::new(1, Variant::Borda);
-    borda_tally.add_weighted(vec!["Andrew", "Catherine", "Brian", "David"], 51);
-    borda_tally.add_weighted(vec!["Catherine", "Brian", "David", "Andrew"], 5);
-    borda_tally.add_weighted(vec!["Brian", "Catherine", "David", "Andrew"], 23);
-    borda_tally.add_weighted(vec!["David", "Catherine", "Brian", "Andrew"], 21);
+    borda_tally.add_weighted(vec!["Andrew", "Catherine", "Brian", "David"], 51)?;
+    borda_tally.add_weighted(vec!["Catherine", "Brian", "David", "Andrew"], 5)?;
+    borda_tally.add_weighted(vec!["Brian", "Catherine", "David", "Andrew"], 23)?;
+    borda_tally.add_weighted(vec!["David", "Catherine", "Brian", "Andrew"], 21)?;
 
     assert!(borda_tally.totals() == vec![("Catherine", 205), ("Andrew", 153), ("Brian", 151), ("David", 91)]);
     assert!(borda_tally.winners().into_unranked() == vec!["Catherine"]);
 
     let mut classic_tally = DefaultBordaTally::new(1, Variant::ClassicBorda);
-    classic_tally.add_weighted(vec!["Andrew", "Catherine", "Brian", "David"], 51);
-    classic_tally.add_weighted(vec!["Catherine", "Brian", "David", "Andrew"], 5);
-    classic_tally.add_weighted(vec!["Brian", "Catherine", "David", "Andrew"], 23);
-    classic_tally.add_weighted(vec!["David", "Catherine", "Brian", "Andrew"], 21);
+    classic_tally.add_weighted(vec!["Andrew", "Catherine", "Brian", "David"], 51)?;
+    classic_tally.add_weighted(vec!["Catherine", "Brian", "David", "Andrew"], 5)?;
+    classic_tally.add_weighted(vec!["Brian", "Catherine", "David", "Andrew"], 23)?;
+    classic_tally.add_weighted(vec!["David", "Catherine", "Brian", "Andrew"], 21)?;
 
     assert!(classic_tally.totals() == vec![("Catherine", 305), ("Andrew", 253), ("Brian", 251), ("David", 191)]);
     assert!(classic_tally.winners().into_unranked() == vec!["Catherine"]);
 
     let mut dowdall_tally = BordaTally::<&str, f64>::new(1, Variant::Dowdall);
-    dowdall_tally.add_weighted(vec!["Andrew", "Catherine", "Brian", "David"], 51.0);
-    dowdall_tally.add_weighted(vec!["Catherine", "Brian", "David", "Andrew"], 5.0);
-    dowdall_tally.add_weighted(vec!["Brian", "Catherine", "David", "Andrew"], 23.0);
-    dowdall_tally.add_weighted(vec!["David", "Catherine", "Brian", "Andrew"], 21.0);
+    dowdall_tally.add_weighted(vec!["Andrew", "Catherine", "Brian", "David"], 51.0)?;
+    dowdall_tally.add_weighted(vec!["Catherine", "Brian", "David", "Andrew"], 5.0)?;
+    dowdall_tally.add_weighted(vec!["Brian", "Catherine", "David", "Andrew"], 23.0)?;
+    dowdall_tally.add_weighted(vec!["David", "Catherine", "Brian", "Andrew"], 21.0)?;
 
     assert!(
       dowdall_tally.totals()
@@ -282,11 +372,20 @@ mod tests {
     assert!(dowdall_tally.winners().into_unranked() == vec!["Andrew"]);
 
     let mut tally = DefaultBordaTally::new(1, Variant::Borda);
-    tally.add_weighted(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"], 42);
-    tally.add_weighted(vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"], 26);
-    tally.add_weighted(vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"], 15);
-    tally.add_weighted(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"], 17);
+    tally.add_weighted(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"], 42)?;
+    tally.add_weighted(vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"], 26)?;
+    tally.add_weighted(vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"], 15)?;
+    tally.add_weighted(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"], 17)?;
     assert!(tally.totals() == vec![("Nashville", 194), ("Chattanooga", 173), ("Memphis", 126), ("Knoxville", 107)]);
     assert!(tally.winners().into_unranked() == vec!["Nashville"]);
+
+    Ok(())
+  }
+
+  #[test]
+  #[should_panic]
+  fn borda_panic_test() {
+    // Dowdall should panic when using integers
+    let _points: u64 = Variant::Dowdall.points(0, 4, 4);
   }
 }
