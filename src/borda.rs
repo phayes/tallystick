@@ -379,6 +379,27 @@ mod tests {
     assert!(tally.totals() == vec![("Nashville", 194), ("Chattanooga", 173), ("Memphis", 126), ("Knoxville", 107)]);
     assert!(tally.winners().into_unranked() == vec!["Nashville"]);
 
+    // Testing Modified Borda
+    let mut tally = DefaultBordaTally::new(1, Variant::ModifiedBorda);
+    tally.add(vec!["Alice", "Bob", "Carlos"])?;
+    tally.add(vec!["Alice", "Bob"])?;
+    tally.add(vec!["Bob", "Carlos"])?;
+    assert!(tally.totals() == vec![("Alice", 3), ("Bob", 2), ("Carlos", 0)]);
+
+    let mut tally = DefaultBordaTally::new(1, Variant::ModifiedClassicBorda);
+    tally.add(vec!["Alice", "Bob", "Carlos"])?;
+    tally.add(vec!["Alice", "Bob"])?;
+    tally.add(vec!["Bob", "Carlos"])?;
+    assert!(tally.totals() == vec![("Alice", 5), ("Bob", 5), ("Carlos", 2)]);
+
+    // Testin adding ref
+    let vote_1 = vec!["Alice", "Bob", "Carlos"];
+    let vote_2 = vec!["Alice", "Bob"];
+    let mut tally = DefaultBordaTally::new(1, Variant::Borda);
+    tally.add_ref(&vote_1)?;
+    tally.add_ref(&vote_2)?;
+    assert!(tally.totals() == vec![("Alice", 4), ("Bob", 2), ("Carlos", 0)]);
+
     Ok(())
   }
 
