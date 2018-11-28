@@ -124,12 +124,15 @@ impl Variant {
 ///
 ///    // What is your favourite colour?
 ///    // A vote with hexadecimal colour candidates and a single-winner.
+///    let red = 0xff0000;
+///    let blue = 0x00ff00;
+///    let green = 0x0000ff;
 ///    let mut tally = DefaultBordaTally::<u32>::new(1, Variant::Borda);
-///    tally.add(vec![0x0000ff, 0x00ff00, 0x0000ff]);
-///    tally.add(vec![0xff0000, 0x0000ff, 0x00ff00]);
-///    tally.add(vec![0x00ff00, 0x0000ff, 0xff0000]);
-///    tally.add(vec![0x00ff00, 0xff0000, 0x0000ff]);
-///    tally.add(vec![0x00ff00, 0xff0000, 0x0000ff]);
+///    tally.add(vec![green, blue, red]);
+///    tally.add(vec![red, green, blue]);
+///    tally.add(vec![blue, green, red]);
+///    tally.add(vec![blue, red, green]);
+///    tally.add(vec![blue, red, green]);
 ///
 ///    let winners = tally.winners().into_unranked();
 ///

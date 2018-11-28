@@ -58,6 +58,23 @@ pub mod condorcet;
 /// The Borda count is a family of election methods in which voters rank candidates in order of preference.
 /// The Borda count determines the winner by giving each candidate, for each ballot, a number of points corresponding to the number of candidates ranked lower.
 /// Once all votes have been counted the candidate with the most points is the winner.
+///
+/// # Example
+/// ```
+///    use tallyman::borda::DefaultBordaTally;
+///    use tallyman::borda::Variant;
+///
+///    // Election between Alice, Bob, and Carlos with two winners.
+///    let mut tally = DefaultBordaTally::new(2, Variant::ModifiedBorda);
+///    tally.add(vec!["Alice", "Bob", "Carlos"]);
+///    tally.add(vec!["Bob", "Carlos", "Alice"]);
+///    tally.add(vec!["Alice", "Bob", "Carlos"]);
+///    tally.add(vec!["Carlos", "Bob", "Alice"]);
+///    tally.add(vec!["Alice", "Carlos", "Bob"]);
+///
+///    let winners = tally.winners().into_unranked();
+///    println!("The winners are {:?}", winners);
+/// ```
 pub mod borda;
 
 // Common Data Structures
