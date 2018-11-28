@@ -90,7 +90,13 @@ pub enum Variant {
 }
 
 impl Variant {
-  // TODO: Panic if we are using Dowdall without a Float C, specialization?
+  /// Get the number of points for a candidate at a certain position on a ballot.
+  ///
+  /// - `candidate_position` is the position of the candidate on the marked ballot. It is `0` for the 1st candidate, `1` for the second candidate etc.
+  /// - `num_candidates` is the total number of candidates in this election.
+  /// - `num_marked` is the total number of candidates marked on the ballot.
+  ///
+  /// This method will panic if using `Dowdall` with an integer based vote-count type.
   pub fn points<C: Numeric + Num + NumCast>(&self, candidate_position: usize, num_candidates: usize, num_marked: usize) -> C {
     match self {
       Variant::Borda => C::from(num_candidates - candidate_position - 1).unwrap(),
@@ -107,6 +113,29 @@ impl Variant {
   }
 }
 
+/// A borda tally using `u64` integers to count votes.
+/// `DefaultBordaTally` is generally preferred over `BordaTally`, except when using the `Variant::Dowdall` variant.
+/// Since this is an alias, refer to [`BordaTally`](struct.BordaTally.html) for method documentation.
+///
+/// # Example
+/// ```
+///    use tallyman::borda::DefaultBordaTally;
+///    use tallyman::borda::Variant;
+///
+///    // What is your favourite colour?
+///    // A vote with hexadecimal colour candidates and a single-winner.
+///    let mut tally = DefaultBordaTally::<u32>::new(1, Variant::Borda);
+///    tally.add(vec![0x0000ff, 0x00ff00, 0x0000ff]);
+///    tally.add(vec![0xff0000, 0x0000ff, 0x00ff00]);
+///    tally.add(vec![0x00ff00, 0x0000ff, 0xff0000]);
+///    tally.add(vec![0x00ff00, 0xff0000, 0x0000ff]);
+///    tally.add(vec![0x00ff00, 0xff0000, 0x0000ff]);
+///
+///    let winners = tally.winners().into_unranked();
+///
+///    // Blue wins!
+///    assert!(winners[0] == 0x00ff00);
+/// ```
 pub type DefaultBordaTally<T> = BordaTally<T, u64>;
 
 pub struct BordaTally<T, C = u64>
