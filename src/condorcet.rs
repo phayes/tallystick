@@ -108,12 +108,17 @@ where
 
     /// Build a graph representing all pairwise competitions between all candidates.
     ///
+    /// Each candidate is assigned a node, vertexes between nodes contain a tuple of counts.
+    /// Vertexes are directional, leading from the more preferred candidate to the less prefered candidate.
+    /// The first element of tuple is the number votes where the first candidate is prefered to the second.
+    /// The second element of the tuple is the number of votes where the second candidate is prefered to the first.
+    /// The first element in the tuple is always greater than or equal to the second element in the tuple.
+    ///
+    /// If both candidates are equally prefered, two vertexes are created, one going in each direction.
+    ///
     /// <img src="https://raw.githubusercontent.com/phayes/tallyman/master/docs/pairwise-graph.png" height="320px">
     /// Source: [https://arxiv.org/pdf/1804.02973.pdf](https://arxiv.org/pdf/1804.02973.pdf)
     pub fn build_graph(&mut self) -> Graph<T, (C, C)> {
-        // TODO: Graph nodes should contain candidates, graph vertexes the pairwise counts
-        // This would both be: nice-to-use as a public method, no need for lookup
-        // probably more extensibe for other tally methods as well
         let mut graph = Graph::<T, (C, C)>::with_capacity(self.candidates.len(), self.candidates.len() ^ 2);
 
         // Add all candidates
