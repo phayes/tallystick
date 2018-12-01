@@ -64,10 +64,7 @@ where
         for (i, candidate) in selection.iter().enumerate() {
             let mut j = i + 1;
             while let Some(candidate_2) = selection.get(j) {
-                *self
-                    .running_total
-                    .entry((*candidate, *candidate_2))
-                    .or_insert(C::zero()) += weight;
+                *self.running_total.entry((*candidate, *candidate_2)).or_insert(C::zero()) += weight;
                 j += 1;
             }
         }
@@ -109,14 +106,15 @@ where
         return winners;
     }
 
-    /// <img src="https://raw.githubusercontent.com/phayes/tallyman/master/assets/pairwise-graph.png" height="320px">
-    /// Source: https://arxiv.org/pdf/1804.02973.pdf
+    /// Build a graph representing all pairwise competitions between all candidates.
+    ///
+    /// <img src="https://raw.githubusercontent.com/phayes/tallyman/master/docs/pairwise-graph.png" height="320px">
+    /// Source: [https://arxiv.org/pdf/1804.02973.pdf](https://arxiv.org/pdf/1804.02973.pdf)
     pub fn build_graph(&mut self) -> Graph<T, (C, C)> {
         // TODO: Graph nodes should contain candidates, graph vertexes the pairwise counts
         // This would both be: nice-to-use as a public method, no need for lookup
         // probably more extensibe for other tally methods as well
-        let mut graph =
-            Graph::<T, (C, C)>::with_capacity(self.candidates.len(), self.candidates.len() ^ 2);
+        let mut graph = Graph::<T, (C, C)>::with_capacity(self.candidates.len(), self.candidates.len() ^ 2);
 
         // Add all candidates
         let mut graph_ids = HashMap::<usize, NodeIndex>::new();
@@ -126,21 +124,14 @@ where
 
         let zero = C::zero();
         for ((candidate_1, candidate_2), votecount_1) in self.running_total.iter() {
-            let votecount_2 = self
-                .running_total
-                .get(&(*candidate_2, *candidate_1))
-                .unwrap_or(&zero);
+            let votecount_2 = self.running_total.get(&(*candidate_2, *candidate_1)).unwrap_or(&zero);
 
             // Only add if candidate_1 vs candidate_2 votecount is larger than candidate_2 vs candidate_1 votecount
             // Otherwise we will catch it when we come around to it again.
             if votecount_1 >= votecount_2 {
                 let candidate_1_id = graph_ids.get(candidate_1).unwrap();
                 let candidate_2_id = graph_ids.get(candidate_2).unwrap();
-                graph.add_edge(
-                    *candidate_2_id,
-                    *candidate_1_id,
-                    (*votecount_1, *votecount_2),
-                );
+                graph.add_edge(*candidate_2_id, *candidate_1_id, (*votecount_1, *votecount_2));
             }
         }
 
