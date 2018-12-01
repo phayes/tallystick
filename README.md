@@ -18,7 +18,7 @@ tallyman is a work-in-progress rust library for tallying votes.
 
 ## Features
 - [ ] `no_std` for embedded use.
-- [X] `wasm` support for use in the browser, or in blockchain smart contracts.
+- [ ] `wasm` support for use in the browser, or in blockchain smart contracts.
 - [ ] `rational` support for perfectly-precise tallies by using rational fractions instead of floats.
 
 ## Supported Tally Methods
