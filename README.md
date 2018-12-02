@@ -28,13 +28,14 @@ tallyman is a work-in-progress rust library for tallying votes.
 | ✓      | Plurality         |                                      | 100 million v/s  | First Past the Post (FPTP)|
 | ⚠      | Score             |                                      |                  |                           |
 | ⚠      | Approval          |                                      |                  |                           |
-| ⚠      | STV               | Droop, Hagenbach-Bischoff, Hare      | 3 million v/s    | Single Transferable Vote  |
+| ⚠      | STV               | Newland-Britton, Meek, Warren        | 3 million v/s    | Single Transferable Vote  |
 |        | CPO-STV           |                                      |                  |                           |
 |        | Instant Runoff    |                                      |                  |                           |
 |        | Contingent        |                                      |                  |                           |
 | ⚠      | Condorcet         |                                      | 2 million v/s    |                           |
 |        | Copeland          |                                      |                  |                           |
 |        | Schulze           | Winning, Margin, Ratio               |                  |                           |
+|        | Schulze STV       |                                      |                  |                           |
 |        | Kemeny–Young      |                                      |                  |                           |
 |        | Minimax           |                                      |                  |                           |
 | ✓      | Borda             | Classic, Dowdall, Modified           | 3 million v/s    |                           |
