@@ -122,7 +122,7 @@ fn borda_benchmark(c: &mut Criterion) {
 
 // Build a tally, put votes into the tally, and compute the results.
 fn condorcet<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
-    let mut tally = tallyman::condorcet::DefaultTally::with_capacity(1, num_candidates);
+    let mut tally = tallyman::condorcet::DefaultCondorcetTally::with_capacity(1, num_candidates);
 
     for vote in votes.drain(0..) {
         tally.add(vote);

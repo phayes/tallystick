@@ -8,9 +8,9 @@ use petgraph::Graph;
 use std::hash::Hash;
 use std::ops::AddAssign;
 
-pub type DefaultTally<T> = Tally<T, u64>;
+pub type DefaultCondorcetTally<T> = CondorcetTally<T, u64>;
 
-pub struct Tally<T, C = u64>
+pub struct CondorcetTally<T, C = u64>
 where
     T: Eq + Clone + Hash,                             // Candidate type
     C: Copy + PartialOrd + AddAssign + Num + NumCast, // Count type
@@ -20,13 +20,13 @@ where
     candidates: HashMap<T, usize>, // Map candiates to a unique integer identifiers
 }
 
-impl<T, C> Tally<T, C>
+impl<T, C> CondorcetTally<T, C>
 where
     T: Eq + Clone + Hash,                             // Candidate type
     C: Copy + PartialOrd + AddAssign + Num + NumCast, // Count type
 {
     pub fn new(num_winners: u32) -> Self {
-        return Tally {
+        return CondorcetTally {
             running_total: HashMap::new(),
             num_winners: num_winners,
             candidates: HashMap::new(),
@@ -34,7 +34,7 @@ where
     }
 
     pub fn with_capacity(num_winners: u32, expected_candidates: usize) -> Self {
-        return Tally {
+        return CondorcetTally {
             running_total: HashMap::with_capacity(expected_candidates ^ 2),
             num_winners: num_winners,
             candidates: HashMap::with_capacity(expected_candidates),
@@ -117,7 +117,7 @@ where
     /// If both candidates are equally prefered, two vertexes are created, one going in each direction.
     ///
     /// <img src="https://raw.githubusercontent.com/phayes/tallyman/master/docs/pairwise-graph.png" height="320px">
-    /// Source: [https://arxiv.org/pdf/1804.02973.pdf](https://arxiv.org/pdf/1804.02973.pdf)
+    /// Image Source: [https://arxiv.org/pdf/1804.02973.pdf](https://arxiv.org/pdf/1804.02973.pdf)
     pub fn build_graph(&mut self) -> Graph<T, (C, C)> {
         let mut graph = Graph::<T, (C, C)>::with_capacity(self.candidates.len(), self.candidates.len() ^ 2);
 
@@ -166,7 +166,7 @@ mod tests {
     #[test]
     fn condorcet_test() {
         // Election between Alice, Bob, and Cir
-        let mut tally = DefaultTally::new(2);
+        let mut tally = DefaultCondorcetTally::new(2);
         tally.add(vec!["Alice", "Bob", "Cir"]);
         tally.add(vec!["Alice", "Bob", "Cir"]);
         tally.add(vec!["Alice", "Bob", "Cir"]);
@@ -175,7 +175,7 @@ mod tests {
         assert_eq!(winners.into_vec(), vec! {("Alice", 0), ("Bob", 1)});
 
         // Test a non-transitive voting paradox
-        let mut tally = DefaultTally::new(1);
+        let mut tally = DefaultCondorcetTally::new(1);
         tally.add(vec!["Alice", "Bob", "Cir"]);
         tally.add(vec!["Bob", "Cir", "Alice"]);
         tally.add(vec!["Cir", "Alice", "Bob"]);
@@ -189,7 +189,7 @@ mod tests {
     #[test]
     fn condorcet_wikipedia_test() {
         // From: https://en.wikipedia.org/wiki/Condorcet_method
-        let mut tally = DefaultTally::new(4);
+        let mut tally = DefaultCondorcetTally::new(4);
         tally.add_weighted(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"], 42);
         tally.add_weighted(vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"], 26);
         tally.add_weighted(vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"], 15);
@@ -200,5 +200,35 @@ mod tests {
             winners.into_vec(),
             vec! {("Nashville", 0), ("Chattanooga", 1), ("Knoxville", 2), ("Memphis", 3)}
         );
+    }
+
+    #[test]
+    fn condorcet_graph_test() {
+        // From: https://arxiv.org/pdf/1804.02973.pdf
+
+        // Example 1:
+        let mut tally = DefaultCondorcetTally::new(1);
+        tally.add_weighted(vec!["a", "c", "d", "b"], 8);
+        tally.add_weighted(vec!["b", "a", "d", "c"], 2);
+        tally.add_weighted(vec!["c", "d", "b", "a"], 4);
+        tally.add_weighted(vec!["d", "b", "a", "c"], 4);
+        tally.add_weighted(vec!["d", "c", "b", "a"], 3);
+
+        let graph = tally.build_graph();
+        assert_eq!(graph.node_count(), 4);
+        assert_eq!(graph.edge_count(), 6);
+
+        for index in graph.node_indices() {
+            let candidate = *graph.node_weight(index).unwrap();
+            for edge in graph.edges(index).map(|e| e.weight()) {
+                match candidate {
+                    "a" => assert!(*edge == (13, 8) || *edge == (11, 10) || *edge == (14, 7)),
+                    "b" => assert!(*edge == (13, 8) || *edge == (15, 6) || *edge == (19, 2)),
+                    "c" => assert!(*edge == (12, 9) || *edge == (15, 6) || *edge == (14, 7)),
+                    "d" => assert!(*edge == (12, 9) || *edge == (11, 10) || *edge == (19, 2)),
+                    _ => panic!("Invalid candidate"),
+                }
+            }
+        }
     }
 }
