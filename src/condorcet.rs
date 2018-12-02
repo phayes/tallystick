@@ -96,9 +96,10 @@ where
             // We need to add all members of a smith set at the same time,
             // even if it means more winners than needed. All members of a smith_set
             // have the same rank.
+
             // TODO: Check performance difference between cloning here and using a stable graph (where we can remove_node())
             for graph_id in smith_set.iter() {
-                let candidate = graph.node_weight(*graph_id).unwrap();
+                let candidate = graph.node_weight(*graph_id).unwrap(); // Safe to unwrap here since graph should always contain a node-weight at this graph-id.
                 winners.push(candidate.clone(), rank as u32);
             }
         }
@@ -134,7 +135,7 @@ where
             // Only add if candidate_1 vs candidate_2 votecount is larger than candidate_2 vs candidate_1 votecount
             // Otherwise we will catch it when we come around to it again.
             if votecount_1 >= votecount_2 {
-                let candidate_1_id = graph_ids.get(candidate_1).unwrap();
+                let candidate_1_id = graph_ids.get(candidate_1).unwrap(); // Safe to unwrap since graph-ids contain all candidates.
                 let candidate_2_id = graph_ids.get(candidate_2).unwrap();
                 graph.add_edge(*candidate_2_id, *candidate_1_id, (*votecount_1, *votecount_2));
             }
@@ -148,7 +149,7 @@ where
         let mut mapped = Vec::<usize>::new();
         for selected in selection.iter() {
             if self.candidates.contains_key(&selected) {
-                mapped.push(*self.candidates.get(&selected).unwrap());
+                mapped.push(*self.candidates.get(&selected).unwrap()); // Safe to unwrap here since we just checked it one-line above with contains_key()
             } else {
                 let len = self.candidates.len();
                 self.candidates.insert(selected.clone(), len);

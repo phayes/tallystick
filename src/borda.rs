@@ -11,6 +11,10 @@ use num_traits::NumCast;
 use std::hash::Hash;
 use std::ops::AddAssign;
 
+// We often convert C (vote count types) to and from small integers.
+// If we can't sucessfully convert a small integer into C, we panic since converting from a small is trivial.
+const C_FROM_PANIC: &str = "Cannot convert integer to C, this is likely caused by a bug in the ToPrimitive impl for the count type.";
+
 /// Specifies method used to assign points to ranked candidates.
 pub enum Variant<C> {
   /// The standard Borda count where each candidate is assigned a number of points equal to the number of candidates ranked lower than them.
@@ -114,16 +118,18 @@ impl<C: Numeric + Num + NumCast> Variant<C> {
   ///
   /// This method will panic if using [`Variant::Dowdall`](#variant.Dowdall) with an integer based vote-count type.
   pub fn points(&self, candidate_position: usize, num_candidates: usize, num_marked: usize) -> C {
+    // Unwrapping options SHOULD be good here. It's very unlikely that C can't represent a small unsigned integer.
+    // If it is the case that a small integer can't be represented in C, that's a bug.
     match self {
-      Variant::Borda => C::from(num_candidates - candidate_position - 1).unwrap(),
-      Variant::ClassicBorda => C::from(num_candidates - candidate_position).unwrap(),
+      Variant::Borda => C::from(num_candidates - candidate_position - 1).expect(C_FROM_PANIC),
+      Variant::ClassicBorda => C::from(num_candidates - candidate_position).expect(C_FROM_PANIC),
       Variant::Dowdall => {
         if !C::fraction() {
           panic!("tallyman::borda::Variant::Dowdall cannot be used with an integer count type. Please use a float or a rational.")
         }
-        C::one() / C::from(candidate_position + 1).unwrap()
+        C::one() / C::from(candidate_position + 1).expect(C_FROM_PANIC)
       }
-      Variant::ModifiedClassicBorda => C::from(num_marked - candidate_position).unwrap(),
+      Variant::ModifiedClassicBorda => C::from(num_marked - candidate_position).expect(C_FROM_PANIC),
       Variant::Custom(boxed_func) => boxed_func(candidate_position, num_candidates, num_marked),
     }
   }
