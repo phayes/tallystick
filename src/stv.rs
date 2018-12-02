@@ -44,12 +44,7 @@ where
         };
     }
 
-    pub fn with_capacity(
-        num_winners: u32,
-        quota: Quota<C>,
-        expected_candidates: usize,
-        expected_votes: usize,
-    ) -> Self {
+    pub fn with_capacity(num_winners: u32, quota: Quota<C>, expected_candidates: usize, expected_votes: usize) -> Self {
         return Tally {
             running_total: HashMap::with_capacity(expected_candidates),
             num_winners: num_winners,
@@ -85,10 +80,7 @@ where
                     .push(weighted_vote);
             }
             None => {
-                self.running_total
-                    .entry(choice)
-                    .or_default()
-                    .push(weighted_vote);
+                self.running_total.entry(choice).or_default().push(weighted_vote);
             }
         }
     }
@@ -295,10 +287,7 @@ mod tests {
         tally.add(vec!["Sweets"]);
 
         let winners = tally.winners();
-        assert_eq!(
-            winners.into_vec(),
-            vec! {("Chocolate", 0), ("Orange", 1), ("Strawberry", 2)}
-        );
+        assert_eq!(winners.into_vec(), vec! {("Chocolate", 0), ("Orange", 1), ("Strawberry", 2)});
 
         // From https://en.wikipedia.org/wiki/Comparison_of_the_Hare_and_Droop_quotas
         let mut hare_tally = DefaultTally::new(5, Quota::Hare);
