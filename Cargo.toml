@@ -3,6 +3,9 @@ name = "tallyman"
 version = "0.1.0"
 authors = ["phayes <patrick.d.hayes@gmail.com>"]
 edition = "2018"
+description = "tallyman is a rust library for talling votes"
+license = "MIT OR APACHE"
+repository = "https://github.com/phayes/tallyman"
 
 [package.metadata.docs.rs]
 features = ["rational"]
