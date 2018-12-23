@@ -7,12 +7,12 @@ description = "tallyman is a rust library for talling votes"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/phayes/tallyman"
 readme = "README.md"
-keywords = ["voting", "election", "tally", "stv", "condorcet"]
-categories = ["science"]
+keywords = ["voting", "vote", "election", "tally", "ballot"]
+categories = ["science", "economics", "social choice", "political science"]
 
 [badges]
-travis-ci = { repository = "https://github.com/phayes/tallyman", branch = "master" }
-codecov = { repository = "https://github.com/phayes/tallyman", branch = "master", service = "github" }
+travis-ci = { repository = "phayes/tallyman", branch = "master" }
+codecov = { repository = "phayes/tallyman", branch = "master", service = "github" }
 maintenance = { status = "actively-developed" }
 
 [package.metadata.docs.rs]
