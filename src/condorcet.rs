@@ -1,4 +1,6 @@
+use super::check_duplicate;
 use super::RankedWinners;
+use super::TallyError;
 use hashbrown::HashMap;
 use num_traits::cast::NumCast;
 use num_traits::Num;
@@ -41,25 +43,25 @@ where
         };
     }
 
-    pub fn add(&mut self, selection: Vec<T>) {
-        self.add_weighted_ref(&selection, C::one());
+    pub fn add(&mut self, vote: Vec<T>) -> Result<(), TallyError> {
+        self.add_weighted_ref(&vote, C::one())
     }
 
-    pub fn add_ref(&mut self, selection: &[T]) {
-        self.add_weighted_ref(selection, C::one());
+    pub fn add_ref(&mut self, vote: &[T]) -> Result<(), TallyError> {
+        self.add_weighted_ref(vote, C::one())
     }
 
-    pub fn add_weighted(&mut self, selection: Vec<T>, weight: C) {
-        self.add_weighted_ref(&selection, weight);
+    pub fn add_weighted(&mut self, vote: Vec<T>, weight: C) -> Result<(), TallyError> {
+        self.add_weighted_ref(&vote, weight)
     }
 
-    pub fn add_weighted_ref(&mut self, selection: &[T], weight: C) {
-        // TODO: ensure votes are transitive.
-        if selection.is_empty() {
-            return;
+    pub fn add_weighted_ref(&mut self, vote: &[T], weight: C) -> Result<(), TallyError> {
+        if vote.is_empty() {
+            return Ok(());
         }
+        check_duplicate(vote)?;
 
-        let selection = self.mapped_candidates(&selection);
+        let selection = self.mapped_candidates(&vote);
 
         for (i, candidate) in selection.iter().enumerate() {
             let mut j = i + 1;
@@ -68,6 +70,8 @@ where
                 j += 1;
             }
         }
+
+        Ok(())
     }
 
     pub fn reset(&mut self) {
@@ -75,24 +79,40 @@ where
         self.candidates = HashMap::new();
     }
 
-    pub fn winners(&mut self) -> RankedWinners<T> {
-        // Compute smith-sets using Tarjan's strongly connected components algorithm.
-        let graph = self.build_graph();
-        let smith_sets = tarjan_scc(&graph);
+    pub fn totals(&self) -> Vec<((T, T), C)> {
+        let mut totals = Vec::<((T, T), C)>::with_capacity(self.running_total.len());
 
-        // Inverse the candidate map, cloned candidates will be moved into the winners list.
+        // Invert the candidate map.
         let mut candidates = HashMap::<usize, T>::with_capacity(self.candidates.len());
         for (candidate, i) in self.candidates.iter() {
             candidates.insert(*i, candidate.clone());
         }
 
-        // Add to winners list.
-        let mut winners = RankedWinners::new(self.num_winners);
-        for (rank, smith_set) in smith_sets.iter().enumerate() {
-            if winners.len() as u32 >= self.num_winners {
-                break;
-            }
+        for ((candidate1, candidate2), count) in self.running_total.iter() {
+            // Ok to unwrap here since candidates must exist.
+            let candidate1 = candidates.get(candidate1).unwrap().clone();
+            let candidate2 = candidates.get(candidate2).unwrap().clone();
+            totals.push(((candidate1, candidate2), *count));
+        }
 
+        return totals;
+    }
+
+    /// Get a ranked list of all candidates. Candidates with the same rank are tied.
+    pub fn ranked(&self) -> Vec<(T, u32)> {
+        // Compute smith-sets using Tarjan's strongly connected components algorithm.
+        let graph = self.build_graph();
+        let smith_sets = tarjan_scc(&graph);
+
+        // Invert the candidate map, cloned candidates will be moved into the winners list.
+        let mut candidates = HashMap::<usize, T>::with_capacity(self.candidates.len());
+        for (candidate, i) in self.candidates.iter() {
+            candidates.insert(*i, candidate.clone());
+        }
+
+        // Add to ranked list.
+        let mut ranked = Vec::<(T, u32)>::with_capacity(self.candidates.len());
+        for (rank, smith_set) in smith_sets.iter().enumerate() {
             // We need to add all members of a smith set at the same time,
             // even if it means more winners than needed. All members of a smith_set
             // have the same rank.
@@ -100,11 +120,15 @@ where
             // TODO: Check performance difference between cloning here and using a stable graph (where we can remove_node())
             for graph_id in smith_set.iter() {
                 let candidate = graph.node_weight(*graph_id).unwrap(); // Safe to unwrap here since graph should always contain a node-weight at this graph-id.
-                winners.push(candidate.clone(), rank as u32);
+                ranked.push((candidate.clone(), rank as u32));
             }
         }
 
-        return winners;
+        return ranked;
+    }
+
+    pub fn winners(&self) -> RankedWinners<T> {
+        return RankedWinners::from_ranked(self.ranked(), self.num_winners);
     }
 
     /// Build a graph representing all pairwise competitions between all candidates.
@@ -119,7 +143,7 @@ where
     ///
     /// <img src="https://raw.githubusercontent.com/phayes/tallyman/master/docs/pairwise-graph.png" height="320px">
     /// Image Source: [https://arxiv.org/pdf/1804.02973.pdf](https://arxiv.org/pdf/1804.02973.pdf)
-    pub fn build_graph(&mut self) -> Graph<T, (C, C)> {
+    pub fn build_graph(&self) -> Graph<T, (C, C)> {
         let mut graph = Graph::<T, (C, C)>::with_capacity(self.candidates.len(), self.candidates.len() ^ 2);
 
         // Add all candidates
@@ -144,6 +168,12 @@ where
         return graph;
     }
 
+    /// Get a list of all candidates seen by this tally.
+    /// Candidates are returned in no particular order.
+    pub fn candidates(&self) -> Vec<T> {
+        return self.candidates.iter().map(|(k, _v)| k.clone()).collect();
+    }
+
     // Ensure that candidates are in our list of candidates, and return an internal numeric representation of the same
     fn mapped_candidates(&mut self, selection: &[T]) -> Vec<usize> {
         let mut mapped = Vec::<usize>::new();
@@ -165,55 +195,59 @@ mod tests {
     use super::*;
 
     #[test]
-    fn condorcet_test() {
+    fn condorcet_test() -> Result<(), TallyError> {
         // Election between Alice, Bob, and Cir
         let mut tally = DefaultCondorcetTally::new(2);
-        tally.add(vec!["Alice", "Bob", "Cir"]);
-        tally.add(vec!["Alice", "Bob", "Cir"]);
-        tally.add(vec!["Alice", "Bob", "Cir"]);
+        tally.add(vec!["Alice", "Bob", "Cir"])?;
+        tally.add(vec!["Alice", "Bob", "Cir"])?;
+        tally.add(vec!["Alice", "Bob", "Cir"])?;
 
         let winners = tally.winners();
         assert_eq!(winners.into_vec(), vec! {("Alice", 0), ("Bob", 1)});
 
         // Test a non-transitive voting paradox
         let mut tally = DefaultCondorcetTally::new(1);
-        tally.add(vec!["Alice", "Bob", "Cir"]);
-        tally.add(vec!["Bob", "Cir", "Alice"]);
-        tally.add(vec!["Cir", "Alice", "Bob"]);
+        tally.add(vec!["Alice", "Bob", "Cir"])?;
+        tally.add(vec!["Bob", "Cir", "Alice"])?;
+        tally.add(vec!["Cir", "Alice", "Bob"])?;
 
         let winners = tally.winners();
         assert_eq!(winners.rank(&"Alice").unwrap(), 0);
         assert_eq!(winners.rank(&"Bob").unwrap(), 0);
         assert_eq!(winners.rank(&"Cir").unwrap(), 0);
+
+        Ok(())
     }
 
     #[test]
-    fn condorcet_wikipedia_test() {
+    fn condorcet_wikipedia_test() -> Result<(), TallyError> {
         // From: https://en.wikipedia.org/wiki/Condorcet_method
         let mut tally = DefaultCondorcetTally::new(4);
-        tally.add_weighted(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"], 42);
-        tally.add_weighted(vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"], 26);
-        tally.add_weighted(vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"], 15);
-        tally.add_weighted(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"], 17);
+        tally.add_weighted(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"], 42)?;
+        tally.add_weighted(vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"], 26)?;
+        tally.add_weighted(vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"], 15)?;
+        tally.add_weighted(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"], 17)?;
 
         let winners = tally.winners();
         assert_eq!(
             winners.into_vec(),
             vec! {("Nashville", 0), ("Chattanooga", 1), ("Knoxville", 2), ("Memphis", 3)}
         );
+
+        Ok(())
     }
 
     #[test]
-    fn condorcet_graph_test() {
+    fn condorcet_graph_test() -> Result<(), TallyError> {
         // From: https://arxiv.org/pdf/1804.02973.pdf
 
         // Example 1:
         let mut tally = DefaultCondorcetTally::new(1);
-        tally.add_weighted(vec!["a", "c", "d", "b"], 8);
-        tally.add_weighted(vec!["b", "a", "d", "c"], 2);
-        tally.add_weighted(vec!["c", "d", "b", "a"], 4);
-        tally.add_weighted(vec!["d", "b", "a", "c"], 4);
-        tally.add_weighted(vec!["d", "c", "b", "a"], 3);
+        tally.add_weighted(vec!["a", "c", "d", "b"], 8)?;
+        tally.add_weighted(vec!["b", "a", "d", "c"], 2)?;
+        tally.add_weighted(vec!["c", "d", "b", "a"], 4)?;
+        tally.add_weighted(vec!["d", "b", "a", "c"], 4)?;
+        tally.add_weighted(vec!["d", "c", "b", "a"], 3)?;
 
         let graph = tally.build_graph();
         assert_eq!(graph.node_count(), 4);
@@ -231,5 +265,7 @@ mod tests {
                 }
             }
         }
+
+        Ok(())
     }
 }

@@ -138,6 +138,21 @@ impl<T: Clone + Eq> RankedWinners<T> {
   pub(crate) fn sort(&mut self) {
     self.winners.sort_by(|a, b| a.1.cmp(&b.1));
   }
+
+  // Create winners from a list of ranked candidates
+  pub(crate) fn from_ranked(mut ranked: Vec<(T, u32)>, num_winners: u32) -> Self {
+    let mut winners = Self::new(num_winners);
+    let mut prev_rank = 0;
+    for (candidate, rank) in ranked.drain(0..) {
+      if winners.len() as u32 >= num_winners && rank != prev_rank {
+        break;
+      }
+      winners.push(candidate, rank);
+      prev_rank = rank;
+    }
+
+    return winners;
+  }
 }
 
 // Iterator for Winners
