@@ -74,11 +74,26 @@ where
         Ok(())
     }
 
-    pub fn reset(&mut self) {
-        self.running_total = HashMap::new();
-        self.candidates = HashMap::new();
-    }
-
+    /// Get total counts for this tally.
+    /// Totals are returned as a list of pairwise comparisons
+    /// For a pairwise comparison `((T1, T2), C)`, `C` is the number of votes where candidate `T1` is preferred over candidate `T2`.
+    ///
+    /// # Example
+    /// ```
+    ///    use tallyman::condorcet::DefaultCondorcetTally;
+    ///
+    ///    let mut tally = DefaultCondorcetTally::new(1);
+    ///    for _ in 0..30 { tally.add(vec!["Alice", "Bob"]).unwrap() }
+    ///    for _ in 0..10 { tally.add(vec!["Bob", "Alice"]).unwrap() }
+    ///
+    ///    for ((candidate1, candidate2), num_votes) in tally.totals().iter() {
+    ///       println!("{} is preferred over {} {} times", candidate1, candidate2, num_votes);
+    ///    }
+    ///    // Prints:
+    ///    //   Alice is preferred over Bob 30 times
+    ///    //   Bob is preferred over Alice 10 times
+    /// ```
+    // TODO: 'C' could just be a regular integer (usize?).
     pub fn totals(&self) -> Vec<((T, T), C)> {
         let mut totals = Vec::<((T, T), C)>::with_capacity(self.running_total.len());
 
