@@ -76,7 +76,11 @@ fn condorcet<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize
     let mut tally = tallyman::condorcet::DefaultCondorcetTally::with_capacity(1, num_candidates);
 
     for vote in votes.drain(0..) {
-        tally.add(vote);
+        let res = tally.add(vote);
+        match res {
+            Err(_) => panic!("Error adding vote to condorcet tally"),
+            Ok(_) => (),
+        }
     }
 
     tally.winners();
