@@ -1,4 +1,3 @@
-use num_traits::float::FloatCore;
 use num_traits::real::Real;
 use num_traits::Num;
 
@@ -38,5 +37,5 @@ impl<T: Num + Real> Numeric for T {
   }
 }
 
-// TODO: no_std: should swap Real for FloatCore
+// TODO: no_std: should swap Real for num_traits::float::FloatCore
 // TODO: rational: Check that Ratio implements Real

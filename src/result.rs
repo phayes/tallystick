@@ -150,7 +150,7 @@ impl<T: Clone + Eq> RankedWinners<T> {
       winners.push(candidate, rank);
       prev_rank = rank;
     }
-
+    winners.sort();
     return winners;
   }
 }
