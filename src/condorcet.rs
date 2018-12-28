@@ -10,8 +10,52 @@ use petgraph::Graph;
 use std::hash::Hash;
 use std::ops::AddAssign;
 
+/// A condorcet tally using `u64` integers to count votes.
+/// `DefaultCondorcetTally` is generally preferred over `CondorcetTally`, except when using vote weights that contains fractions.
+/// Since this is an alias, refer to [`CondorcetTally`](struct.CondorcetTally.html) for method documentation.
+///
+/// # Example
+/// ```
+///    use tallyman::condorcet::DefaultCondorcetTally;
+///
+///    // What is your favourite colour?
+///    // A vote with hexadecimal colour candidates and a single-winner.
+///    let red = 0xff0000;
+///    let blue = 0x00ff00;
+///    let green = 0x0000ff;
+///    let mut tally = DefaultCondorcetTally::new(1);
+///    tally.add(vec![green, blue, red]);
+///    tally.add(vec![red, green, blue]);
+///    tally.add(vec![blue, green, red]);
+///    tally.add(vec![blue, red, green]);
+///    tally.add(vec![blue, red, green]);
+///
+///    let winners = tally.winners().into_unranked();
+///
+///    // Blue wins!
+///    assert!(winners[0] == 0x00ff00);
+/// ```
 pub type DefaultCondorcetTally<T> = CondorcetTally<T, u64>;
 
+/// A generic condorcet tally.
+///
+/// Generics:
+/// - `T`: The candidate type.
+/// - `C`: The count type. `u64` is recommended, but can be modified to use a different type for counting votes (eg `f64` for fractional vote weights).
+///
+/// Example:
+/// ```
+///    use tallyman::condorcet::CondorcetTally;
+///
+///    // A tally with string candidates, one winner, and `f64` counting.
+///    let mut tally = CondorcetTally::<&str, f64>::new(1);
+///    tally.add(vec!["Alice", "Bob", "Carlos"]);
+///    tally.add(vec!["Bob", "Carlos", "Alice"]);
+///    tally.add(vec!["Alice", "Carlos", "Bob"]);
+///    tally.add(vec!["Alice", "Bob", "Carlos"]);
+///
+///    let winners = tally.winners();
+/// ```
 pub struct CondorcetTally<T, C = u64>
 where
     T: Eq + Clone + Hash,                             // Candidate type

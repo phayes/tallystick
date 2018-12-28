@@ -32,7 +32,7 @@ tallyman is a work-in-progress rust library for tallying votes.
 |        | CPO-STV           |                                      |                  |                           |
 |        | Instant Runoff    |                                      |                  |                           |
 |        | Contingent        |                                      |                  |                           |
-| ⚠      | Condorcet         |                                      | 2 million v/s    |                           |
+| ✓      | Condorcet         |                                      | 2 million v/s    |                           |
 |        | Copeland          |                                      |                  |                           |
 |        | Schulze           | Winning, Margin, Ratio               |                  |                           |
 |        | Schulze STV       |                                      |                  |                           |
