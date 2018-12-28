@@ -166,6 +166,7 @@ where
     }
 
     /// Get a ranked list of all candidates. Candidates with the same rank are tied.
+    /// Candidates are ranked in ascending order. The highest ranked candidate has a rank of `0`.
     ///
     /// # Example
     /// ```

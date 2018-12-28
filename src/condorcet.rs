@@ -27,6 +27,10 @@ where
     T: Eq + Clone + Hash,                             // Candidate type
     C: Copy + PartialOrd + AddAssign + Num + NumCast, // Count type
 {
+    /// Create a new `CondorcetTally` with the given number of winners.
+    ///
+    /// If there is a tie, the number of winners might be more than `num_winners`.
+    /// (See [`winners()`](#method.winners) for more information on ties.)
     pub fn new(num_winners: u32) -> Self {
         return CondorcetTally {
             running_total: HashMap::new(),
@@ -35,6 +39,7 @@ where
         };
     }
 
+    /// Create a new `CondorcetTally` with the given number of winners, and number of expected candidates.
     pub fn with_capacity(num_winners: u32, expected_candidates: usize) -> Self {
         return CondorcetTally {
             running_total: HashMap::with_capacity(expected_candidates ^ 2),
@@ -43,18 +48,23 @@ where
         };
     }
 
+    /// Add a new vote
     pub fn add(&mut self, vote: Vec<T>) -> Result<(), TallyError> {
         self.add_weighted_ref(&vote, C::one())
     }
 
+    /// Add a vote by reference.
     pub fn add_ref(&mut self, vote: &[T]) -> Result<(), TallyError> {
         self.add_weighted_ref(vote, C::one())
     }
 
+    /// Add a weighted vote.
+    /// By default takes a weight as a `usize` integer, but can be customized by using `CondorcetTally` with a custom count type.
     pub fn add_weighted(&mut self, vote: Vec<T>, weight: C) -> Result<(), TallyError> {
         self.add_weighted_ref(&vote, weight)
     }
 
+    /// Add a weighted vote by reference.
     pub fn add_weighted_ref(&mut self, vote: &[T], weight: C) -> Result<(), TallyError> {
         if vote.is_empty() {
             return Ok(());
@@ -114,6 +124,25 @@ where
     }
 
     /// Get a ranked list of all candidates. Candidates with the same rank are tied.
+    /// Candidates are ranked in ascending order. The highest ranked candidate has a rank of `0`.
+    ///
+    /// # Example
+    /// ```
+    ///    use tallyman::condorcet::DefaultCondorcetTally;
+    ///
+    ///    let mut tally = DefaultCondorcetTally::new(1);
+    ///    for _ in 0..50 { tally.add(vec!["Alice", "Bob", "Carlos"]); }
+    ///    for _ in 0..40 { tally.add(vec!["Bob", "Carlos", "Alice"]); }
+    ///    for _ in 0..30 { tally.add(vec!["Carlos", "Alice", "Bob"]); }
+    ///    
+    ///    for (candidate, rank) in tally.ranked().iter() {
+    ///       println!("{} has a rank of {}", candidate, rank);
+    ///    }
+    ///    // Prints:
+    ///    //   Alice has a rank of 0
+    ///    //   Bob has a rank of 1
+    ///    //   Carlos has a rank of 2
+    /// ```
     pub fn ranked(&self) -> Vec<(T, u32)> {
         // Compute smith-sets using Tarjan's strongly connected components algorithm.
         let graph = self.build_graph();
@@ -142,6 +171,44 @@ where
         return ranked;
     }
 
+    /// Get a ranked list of winners. Winners with the same rank are tied.
+    /// The number of winners might be greater than the requested `num_winners` if there is a tie.
+    ///
+    /// # Example
+    /// ```
+    ///    use tallyman::condorcet::DefaultCondorcetTally;
+    ///
+    ///    let mut tally = DefaultCondorcetTally::new(2); // We ideally want only 2 winnners
+    ///    tally.add_weighted(vec!["Alice"], 3);
+    ///    tally.add_weighted(vec!["Bob", "Carlos", "Alice"], 2);
+    ///    tally.add_weighted(vec!["Carlos", "Alice", "Bob"], 2);
+    ///    tally.add(vec!["Dave"]); // implicit weight of 1
+    ///
+    ///    let winners = tally.winners();
+    ///
+    ///    println!("We have {} winners", winners.len());
+    ///    // Prints: "We have 3 winners" (due to Carlos and Bob being tied)
+    ///    
+    ///    // Check for ties that overflow the wanted number of winners
+    ///    if winners.check_overflow() {
+    ///        println!("There are more winners than seats.")
+    ///    }
+    ///    if let Some(overflow_winners) = winners.overflow() {
+    ///        println!("We need to resolve the following overflowing tie between:");
+    ///        for overflow_winner in overflow_winners {
+    ///            println!("\t {}", overflow_winner);
+    ///        }
+    ///    }
+    ///    
+    ///    // Print all winners by rank
+    ///    for (winner, rank) in winners.iter() {
+    ///        println!("{} has a rank of {}", winner, rank);
+    ///    }
+    ///    // Prints:
+    ///    //   Alice has a rank of 0
+    ///    //   Bob has a rank of 1
+    ///    //   Carlos has a rank of 1
+    /// ```
     pub fn winners(&self) -> RankedWinners<T> {
         return RankedWinners::from_ranked(self.ranked(), self.num_winners);
     }
@@ -210,7 +277,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn condorcet_test() -> Result<(), TallyError> {
+    fn condorcet_basic() -> Result<(), TallyError> {
         // Election between Alice, Bob, and Cir
         let mut tally = DefaultCondorcetTally::new(2);
         tally.add(vec!["Alice", "Bob", "Cir"])?;
@@ -235,7 +302,7 @@ mod tests {
     }
 
     #[test]
-    fn condorcet_wikipedia_test() -> Result<(), TallyError> {
+    fn condorcet_wikipedia() -> Result<(), TallyError> {
         // From: https://en.wikipedia.org/wiki/Condorcet_method
         let mut tally = DefaultCondorcetTally::new(4);
         tally.add_weighted(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"], 42)?;
@@ -253,7 +320,7 @@ mod tests {
     }
 
     #[test]
-    fn condorcet_graph_test() -> Result<(), TallyError> {
+    fn condorcet_graph() -> Result<(), TallyError> {
         // From: https://arxiv.org/pdf/1804.02973.pdf
 
         // Example 1:
