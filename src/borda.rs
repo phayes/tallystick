@@ -174,7 +174,7 @@ pub type DefaultBordaTally<T> = BordaTally<T, u64>;
 ///    use tallyman::borda::BordaTally;
 ///    use tallyman::borda::Variant;
 ///
-///    // A tally with string candidates, `f64` counting, using the Dowall point system.
+///    // A tally with string candidates, one winner, `f64` counting, using the Dowall point system.
 ///    let mut tally = BordaTally::<&str, f64>::new(1, Variant::Dowdall);
 ///    tally.add(vec!["Alice", "Bob", "Carlos"]);
 ///    tally.add(vec!["Bob", "Carlos", "Alice"]);
