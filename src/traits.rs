@@ -2,9 +2,13 @@ use num_traits::real::Real;
 use num_traits::Num;
 
 /// A trait for numeric types used to count votes.
+///
 /// This type should be automatically implemented for all numeric types you wish to use.
 /// It is used to provide trait specialization so differnetial logic can applied to
 /// integer or fractional (float) based vote counting.
+///
+/// You should pobably not implement this trait. If you have a numeric type that does not implement `Numeric`,
+/// you should instead implement [`num_traits::Num`](/num-traits/latest/num_traits/trait.Num.html) (and optionally [`num_traits::real::Real`](/num-traits/latest/num_traits/real/trait.Real.html) for types that support fractions.)
 pub trait Numeric {
   /// Get the floor for this numeric type.
   /// For non-fractional types, this just returns self.
