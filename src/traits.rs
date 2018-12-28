@@ -3,7 +3,7 @@ use num_traits::Num;
 
 /// A trait for numeric types used to count votes.
 ///
-/// This type should be automatically implemented for all numeric types you wish to use.
+/// Generally seen as the generic `C` in this codebase, this type should be automatically implemented for all numeric types you wish to use.
 /// It is used to provide trait specialization so differnetial logic can applied to
 /// integer or fractional (float) based vote counting.
 ///
