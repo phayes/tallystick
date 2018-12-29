@@ -69,7 +69,7 @@ impl<C: Numeric + Num + Clone> Quota<C> {
       Quota::Droop => (total_votes / (num_winners + C::one())).floor() + C::one(),
       Quota::Hagenbach => {
         if !C::fraction() {
-          panic!("tallyman::Quota::Hagenbach cannot be used with an integer count type. Please use a float or a rational.")
+          panic!("tallystick::Quota::Hagenbach cannot be used with an integer count type. Please use a float or a rational.")
         }
         total_votes / (num_winners + C::one())
       }

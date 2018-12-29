@@ -2,7 +2,7 @@
 //!
 //! ## Compatibility
 //!
-//! The `tallyman` crate currently needs nightly rust. It will move to stable when [trait specialization](https://github.com/rust-lang/rust/issues/31844) is stabilized.
+//! The `tallystick` crate currently needs nightly rust. It will move to stable when [trait specialization](https://github.com/rust-lang/rust/issues/31844) is stabilized.
 //!
 
 #![warn(rust_2018_idioms)]
@@ -16,7 +16,7 @@
 ///
 /// # Example
 /// ```
-///    use tallyman::plurality::DefaultPluralityTally;
+///    use tallystick::plurality::DefaultPluralityTally;
 ///
 ///    // Election between Alice, Bob, and Cir with two winners.
 ///    let mut tally = DefaultPluralityTally::new(2);
@@ -61,8 +61,8 @@ pub mod condorcet;
 ///
 /// # Example
 /// ```
-///    use tallyman::borda::DefaultBordaTally;
-///    use tallyman::borda::Variant;
+///    use tallystick::borda::DefaultBordaTally;
+///    use tallystick::borda::Variant;
 ///
 ///    // Election between Alice, Bob, and Carlos with two winners.
 ///    let mut tally = DefaultBordaTally::new(2, Variant::Borda);

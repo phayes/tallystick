@@ -1,18 +1,18 @@
 [package]
-name = "tallyman"
+name = "tallystick"
 version = "0.1.1"
 authors = ["phayes <patrick.d.hayes@gmail.com>"]
 edition = "2018"
-description = "tallyman is a rust library for talling votes"
+description = "tallystick is a rust library for talling votes"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/phayes/tallyman"
+repository = "https://github.com/phayes/tallystick"
 readme = "README.md"
 keywords = ["voting", "vote", "election", "tally", "ballot"]
 categories = ["science", "economics", "social choice", "political science"]
 
 [badges]
-travis-ci = { repository = "phayes/tallyman", branch = "master" }
-codecov = { repository = "phayes/tallyman", branch = "master", service = "github" }
+travis-ci = { repository = "phayes/tallystick", branch = "master" }
+codecov = { repository = "phayes/tallystick", branch = "master", service = "github" }
 maintenance = { status = "actively-developed" }
 
 [package.metadata.docs.rs]

@@ -16,7 +16,7 @@ use std::ops::AddAssign;
 ///
 /// # Example
 /// ```
-///    use tallyman::condorcet::DefaultCondorcetTally;
+///    use tallystick::condorcet::DefaultCondorcetTally;
 ///
 ///    // What is your favourite colour?
 ///    // A vote with hexadecimal colour candidates and a single-winner.
@@ -45,7 +45,7 @@ pub type DefaultCondorcetTally<T> = CondorcetTally<T, u64>;
 ///
 /// Example:
 /// ```
-///    use tallyman::condorcet::CondorcetTally;
+///    use tallystick::condorcet::CondorcetTally;
 ///
 ///    // A tally with string candidates, one winner, and `f64` counting.
 ///    let mut tally = CondorcetTally::<&str, f64>::new(1);
@@ -134,7 +134,7 @@ where
     ///
     /// # Example
     /// ```
-    ///    use tallyman::condorcet::DefaultCondorcetTally;
+    ///    use tallystick::condorcet::DefaultCondorcetTally;
     ///
     ///    let mut tally = DefaultCondorcetTally::new(1);
     ///    for _ in 0..30 { tally.add(vec!["Alice", "Bob"]).unwrap() }
@@ -172,7 +172,7 @@ where
     ///
     /// # Example
     /// ```
-    ///    use tallyman::condorcet::DefaultCondorcetTally;
+    ///    use tallystick::condorcet::DefaultCondorcetTally;
     ///
     ///    let mut tally = DefaultCondorcetTally::new(1);
     ///    for _ in 0..50 { tally.add(vec!["Alice", "Bob", "Carlos"]); }
@@ -220,7 +220,7 @@ where
     ///
     /// # Example
     /// ```
-    ///    use tallyman::condorcet::DefaultCondorcetTally;
+    ///    use tallystick::condorcet::DefaultCondorcetTally;
     ///
     ///    let mut tally = DefaultCondorcetTally::new(2); // We ideally want only 2 winnners
     ///    tally.add_weighted(vec!["Alice"], 3);
@@ -267,7 +267,7 @@ where
     ///
     /// If both candidates are equally prefered, two vertexes are created, one going in each direction.
     ///
-    /// <img src="https://raw.githubusercontent.com/phayes/tallyman/master/docs/pairwise-graph.png" height="320px">
+    /// <img src="https://raw.githubusercontent.com/phayes/tallystick/master/docs/pairwise-graph.png" height="320px">
     /// Image Source: [https://arxiv.org/pdf/1804.02973.pdf](https://arxiv.org/pdf/1804.02973.pdf)
     pub fn build_graph(&self) -> Graph<T, (C, C)> {
         let mut graph = Graph::<T, (C, C)>::with_capacity(self.candidates.len(), self.candidates.len() ^ 2);

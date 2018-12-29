@@ -55,7 +55,7 @@ pub enum Variant<C> {
   ///
   /// ```1 / (candidate-position + 1)```
   ///
-  /// If Dowdall is selected, tallyman will panic if an integer count type is used in the tally. This variant should only be used with a float or rational tally.
+  /// If Dowdall is selected, tallystick will panic if an integer count type is used in the tally. This variant should only be used with a float or rational tally.
   ///
   /// Example point allocation for a single ballot:
   ///
@@ -68,8 +68,8 @@ pub enum Variant<C> {
   ///
   /// Example:
   /// ```
-  /// use tallyman::borda::BordaTally;
-  /// use tallyman::borda::Variant;
+  /// use tallystick::borda::BordaTally;
+  /// use tallystick::borda::Variant;
   ///
   /// // Note use of `f64` as our count type.
   /// let mut tally = BordaTally::<&str, f64>::new(1, Variant::Dowdall);
@@ -93,8 +93,8 @@ pub enum Variant<C> {
   ///
   /// Example:
   /// ```
-  /// use tallyman::borda::BordaTally;
-  /// use tallyman::borda::Variant;
+  /// use tallystick::borda::BordaTally;
+  /// use tallystick::borda::Variant;
   ///
   /// let boxed_func = Box::new(|candidate_position, num_candidates, num_marked| {
   ///   if num_marked == 1 {
@@ -125,7 +125,7 @@ impl<C: Numeric + Num + NumCast> Variant<C> {
       Variant::ClassicBorda => C::from(num_candidates - candidate_position).expect(C_FROM_PANIC),
       Variant::Dowdall => {
         if !C::fraction() {
-          panic!("tallyman::borda::Variant::Dowdall cannot be used with an integer count type. Please use a float or a rational.")
+          panic!("tallystick::borda::Variant::Dowdall cannot be used with an integer count type. Please use a float or a rational.")
         }
         C::one() / C::from(candidate_position + 1).expect(C_FROM_PANIC)
       }
@@ -141,8 +141,8 @@ impl<C: Numeric + Num + NumCast> Variant<C> {
 ///
 /// # Example
 /// ```
-///    use tallyman::borda::DefaultBordaTally;
-///    use tallyman::borda::Variant;
+///    use tallystick::borda::DefaultBordaTally;
+///    use tallystick::borda::Variant;
 ///
 ///    // What is your favourite colour?
 ///    // A vote with hexadecimal colour candidates and a single-winner.
@@ -171,8 +171,8 @@ pub type DefaultBordaTally<T> = BordaTally<T, u64>;
 ///
 /// Example:
 /// ```
-///    use tallyman::borda::BordaTally;
-///    use tallyman::borda::Variant;
+///    use tallystick::borda::BordaTally;
+///    use tallystick::borda::Variant;
 ///
 ///    // A tally with string candidates, one winner, `f64` counting, using the Dowall point system.
 ///    let mut tally = BordaTally::<&str, f64>::new(1, Variant::Dowdall);
@@ -294,8 +294,8 @@ where
   ///
   /// # Example
   /// ```
-  ///    use tallyman::borda::DefaultBordaTally;
-  ///    use tallyman::borda::Variant;
+  ///    use tallystick::borda::DefaultBordaTally;
+  ///    use tallystick::borda::Variant;
   ///
   ///    let mut tally = DefaultBordaTally::new(1, Variant::ClassicBorda);
   ///    for _ in 0..30 { tally.add(vec!["Alice", "Bob"]).unwrap() }

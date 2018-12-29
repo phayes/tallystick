@@ -1,10 +1,10 @@
-# tallyman
+# tallystick
 
-[![Build Status](https://travis-ci.org/phayes/tallyman.svg?branch=master)](https://travis-ci.org/phayes/tallyman)
-[![codecov](https://codecov.io/gh/phayes/tallyman/branch/master/graph/badge.svg)](https://codecov.io/gh/phayes/tallyman)
+[![Build Status](https://travis-ci.org/phayes/tallystick.svg?branch=master)](https://travis-ci.org/phayes/tallystick)
+[![codecov](https://codecov.io/gh/phayes/tallystick/branch/master/graph/badge.svg)](https://codecov.io/gh/phayes/tallystick)
 
 
-tallyman is a work-in-progress rust library for tallying votes.
+tallystick is a work-in-progress rust library for tallying votes.
 
 *Current state is very unstable. It is not currently recommended for use. See checkboxes below for a list of features that are complete.*
 

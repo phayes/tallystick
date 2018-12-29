@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate criterion;
-use tallyman;
+use tallystick;
 
 use criterion::Benchmark;
 use criterion::Criterion;
@@ -73,7 +73,7 @@ fn borda_benchmark(c: &mut Criterion) {
 
 // Build a tally, put votes into the tally, and compute the results.
 fn condorcet<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
-    let mut tally = tallyman::condorcet::DefaultCondorcetTally::with_capacity(1, num_candidates);
+    let mut tally = tallystick::condorcet::DefaultCondorcetTally::with_capacity(1, num_candidates);
 
     for vote in votes.drain(0..) {
         let res = tally.add(vote);
@@ -87,7 +87,7 @@ fn condorcet<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize
 }
 
 fn stv<T: Eq + Clone + Hash + std::fmt::Debug>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
-    let mut tally = tallyman::stv::DefaultTally::with_capacity(1, tallyman::Quota::Droop, num_candidates, votes.len());
+    let mut tally = tallystick::stv::DefaultTally::with_capacity(1, tallystick::Quota::Droop, num_candidates, votes.len());
 
     for vote in votes.drain(0..) {
         tally.add(vote);
@@ -97,7 +97,7 @@ fn stv<T: Eq + Clone + Hash + std::fmt::Debug>(mut votes: Vec<Vec<T>>, num_candi
 }
 
 fn plurality<T: Eq + Clone + Hash>(mut votes: Vec<T>, num_candidates: usize) {
-    let mut tally = tallyman::plurality::DefaultPluralityTally::with_capacity(1, num_candidates);
+    let mut tally = tallystick::plurality::DefaultPluralityTally::with_capacity(1, num_candidates);
 
     for vote in votes.drain(0..) {
         tally.add(vote);
@@ -107,7 +107,7 @@ fn plurality<T: Eq + Clone + Hash>(mut votes: Vec<T>, num_candidates: usize) {
 }
 
 fn borda<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
-    let mut tally = tallyman::borda::DefaultBordaTally::with_capacity(1, tallyman::borda::Variant::Borda, num_candidates);
+    let mut tally = tallystick::borda::DefaultBordaTally::with_capacity(1, tallystick::borda::Variant::Borda, num_candidates);
 
     for vote in votes.drain(0..) {
         tally.add(vote).unwrap();

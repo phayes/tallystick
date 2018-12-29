@@ -13,7 +13,7 @@ use super::result::RankedWinners;
 ///
 /// # Example
 /// ```
-///    use tallyman::plurality::DefaultPluralityTally;
+///    use tallystick::plurality::DefaultPluralityTally;
 ///
 ///    // What is the loniest number?
 ///    // A vote with integer candidates and a single-winner.
@@ -38,7 +38,7 @@ pub type DefaultPluralityTally<T> = PluralityTally<T, u64>;
 ///
 /// Example:
 /// ```
-///    use tallyman::plurality::PluralityTally;
+///    use tallystick::plurality::PluralityTally;
 ///
 ///    // A tally with string candidates, `f64` counting, and a single winner.
 ///    // f64 counting lets us use fractional vote weights.
@@ -119,7 +119,7 @@ where
     ///
     /// # Example
     /// ```
-    ///    use tallyman::plurality::DefaultPluralityTally;
+    ///    use tallystick::plurality::DefaultPluralityTally;
     ///
     ///    let mut tally = DefaultPluralityTally::new(2); // We ideally want only 2 winnners
     ///    tally.add_weighted("Alice", 3);
@@ -148,7 +148,7 @@ where
     ///
     /// # Example
     /// ```
-    ///    use tallyman::plurality::DefaultPluralityTally;
+    ///    use tallystick::plurality::DefaultPluralityTally;
     ///
     ///    let mut tally = DefaultPluralityTally::new(1);
     ///    for _ in 0..30 { tally.add("Alice") }
@@ -170,7 +170,7 @@ where
     ///
     /// # Example
     /// ```
-    ///    use tallyman::plurality::DefaultPluralityTally;
+    ///    use tallystick::plurality::DefaultPluralityTally;
     ///
     ///    let mut tally = DefaultPluralityTally::new(1);
     ///    for _ in 0..50 { tally.add("Alice") }
