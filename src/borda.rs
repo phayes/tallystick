@@ -11,8 +11,8 @@ use num_traits::NumCast;
 use std::hash::Hash;
 use std::ops::AddAssign;
 
-// We often convert C (vote count types) to and from small integers.
-// If we can't sucessfully convert a small integer into C, we panic since converting from a small is trivial.
+// We often convert `C` (vote count types) to and from small integers.
+// If we can't sucessfully convert a small integer into `C`, we panic since converting from a small is trivial.
 const C_FROM_PANIC: &str = "Cannot convert integer to C, this is likely caused by a bug in the ToPrimitive impl for the count type.";
 
 /// Specifies method used to assign points to ranked candidates.
