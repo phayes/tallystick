@@ -329,8 +329,10 @@ where
   }
 }
 
+/// TODO: Stub
 pub type DefaultNansonTally<T> = NansonTally<T, u64>;
 
+/// TODO: Stub
 pub struct NansonTally<T, C = u64>
 where
   T: Eq + Clone + Hash,                             // Candidate
@@ -339,8 +341,10 @@ where
   borda: BordaTally<T, C>,
 }
 
+/// TODO: Stub
 pub type DefaultBaldwinTally<T> = BaldwinTally<T, u64>;
 
+/// TODO: Stub
 pub struct BaldwinTally<T, C = u64>
 where
   T: Eq + Clone + Hash,                             // Candidate
