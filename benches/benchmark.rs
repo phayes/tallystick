@@ -15,7 +15,8 @@ criterion_group!(
     condorcet_benchmark,
     stv_benchmark,
     plurality_benchmark,
-    approval_benchmark
+    approval_benchmark,
+    score_benchmark
 );
 criterion_main!(benches);
 
@@ -39,6 +40,15 @@ fn approval_benchmark(c: &mut Criterion) {
     c.bench(
         "approval",
         Benchmark::new("random/10K", |b| b.iter(|| approval(random_transitive_votes(10_000), 10)))
+            .sample_size(50)
+            .throughput(Throughput::Elements(10_000)),
+    );
+}
+
+fn score_benchmark(c: &mut Criterion) {
+    c.bench(
+        "score",
+        Benchmark::new("random/10K", |b| b.iter(|| score(random_scored_votes(10_000), 4)))
             .sample_size(50)
             .throughput(Throughput::Elements(10_000)),
     );
@@ -109,7 +119,7 @@ fn condorcet<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize
     tally.winners();
 }
 
-fn stv<T: Eq + Clone + Hash + std::fmt::Debug>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
+fn stv<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
     let mut tally = tallystick::stv::DefaultTally::with_capacity(1, tallystick::Quota::Droop, num_candidates, votes.len());
 
     for vote in votes.drain(0..) {
@@ -149,6 +159,16 @@ fn borda<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
     tally.winners();
 }
 
+fn score<T: Eq + Clone + Hash>(mut votes: Vec<Vec<(T, u64)>>, num_candidates: usize) {
+    let mut tally = tallystick::score::DefaultScoreTally::with_capacity(1, num_candidates);
+
+    for vote in votes.drain(0..) {
+        tally.add(vote);
+    }
+
+    tally.winners();
+}
+
 fn random_transitive_votes(n: u32) -> Vec<Vec<u8>> {
     let mut rng = thread_rng();
     let mut all_votes = Vec::new();
@@ -158,6 +178,26 @@ fn random_transitive_votes(n: u32) -> Vec<Vec<u8>> {
             let candidate = rng.gen_range(0, 10);
             if !vote.contains(&candidate) {
                 vote.push(candidate);
+            }
+        }
+        all_votes.push(vote);
+    }
+
+    return all_votes;
+}
+
+fn random_scored_votes(n: u32) -> Vec<Vec<(u8, u64)>> {
+    let mut rng = thread_rng();
+    let mut all_votes = Vec::new();
+    for _ in 0..n {
+        let mut vote = Vec::<(u8, u64)>::new();
+        let mut candidates = std::collections::HashSet::new();
+        for _ in 0..rng.gen_range(0, 10) {
+            let candidate = rng.gen_range(0, 10);
+            candidates.insert(candidate);
+            let score = rng.gen_range(0, 10);
+            if !candidates.contains(&candidate) {
+                vote.push((candidate, score));
             }
         }
         all_votes.push(vote);

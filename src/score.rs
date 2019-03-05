@@ -171,10 +171,33 @@ mod tests {
     use super::*;
 
     #[test]
+    fn score_basic() {
+        let mut tally = ScoreTally::new(1);
+        tally.add(vec![("Alice", 10), ("Bob", 4)]);
+        tally.add_ref(&vec![("Alice", 2), ("Bob", 2)]);
+        tally.add_weighted_ref(&vec![("Alice", 1), ("Bob", 1)], 5);
+
+        let candidates = tally.candidates();
+        assert_eq!(candidates.len(), 2);
+
+        let totals = tally.totals();
+        assert_eq!(totals, vec![("Alice", 17), ("Bob", 11)]);
+
+        let ranked = tally.ranked();
+        assert_eq!(ranked, vec![("Alice", 0), ("Bob", 1)]);
+
+        let winners = tally.winners();
+        assert_eq!(winners.is_empty(), false);
+        assert_eq!(winners.check_overflow(), false);
+        assert_eq!(winners.overflow(), Option::None);
+        assert_eq!(winners.all(), vec!["Alice"]);
+    }
+
+    #[test]
     fn score_wikipedia() {
         // From: https://en.wikipedia.org/wiki/Score_voting
 
-        let mut tally = ScoreTally::new(1);
+        let mut tally = ScoreTally::with_capacity(1, 4);
         tally.add_weighted(vec![("Memphis", 10), ("Nashville", 4), ("Chattanooga", 2), ("Knoxville", 0)], 42);
         tally.add_weighted(vec![("Memphis", 0), ("Nashville", 10), ("Chattanooga", 4), ("Knoxville", 2)], 26);
         tally.add_weighted(vec![("Memphis", 0), ("Nashville", 6), ("Chattanooga", 10), ("Knoxville", 6)], 15);
