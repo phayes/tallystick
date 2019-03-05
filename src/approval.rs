@@ -173,6 +173,16 @@ mod tests {
     use super::*;
 
     #[test]
+    fn approval_basic() {
+        let mut tally = DefaultApprovalTally::new(1);
+        tally.add_ref(&vec!["Alice"]);
+        tally.add_weighted_ref(&vec!["Alice", "Bob"], 2);
+
+        let winners = tally.winners().into_unranked();
+        assert_eq!(winners, vec!["Alice"]);
+    }
+
+    #[test]
     fn approval_lumen() {
         // From: https://courses.lumenlearning.com/wmopen-mathforliberalarts/chapter/introduction-approval-voting/
 
@@ -180,7 +190,7 @@ mod tests {
         let scream = "Scream";
         let titanic = "Titanic";
 
-        let mut tally = DefaultApprovalTally::new(1);
+        let mut tally = DefaultApprovalTally::with_capacity(1, 3);
         tally.add_weighted(vec![scream, matrix], 3);
         tally.add_weighted(vec![titanic, matrix], 2);
         tally.add(vec![titanic, scream, matrix]);
@@ -188,6 +198,9 @@ mod tests {
         tally.add(vec![titanic, scream]);
         tally.add(vec![titanic]);
         tally.add(vec![scream]);
+
+        let candidates = tally.candidates();
+        assert_eq!(candidates.len(), 3);
 
         let totals = tally.totals();
         assert_eq!(totals, vec![(matrix, 7), (scream, 6), (titanic, 5)]);

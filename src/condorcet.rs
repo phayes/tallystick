@@ -319,28 +319,38 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use maplit::hashset;
+    use std::collections::HashSet;
+    use std::iter::FromIterator;
 
     #[test]
     fn condorcet_basic() -> Result<(), TallyError> {
-        // Election between Alice, Bob, and Cir
+        // Election between Alice, Bob, and Carol
         let mut tally = DefaultCondorcetTally::new(2);
-        tally.add(vec!["Alice", "Bob", "Cir"])?;
-        tally.add(vec!["Alice", "Bob", "Cir"])?;
-        tally.add(vec!["Alice", "Bob", "Cir"])?;
+        tally.add(vec!["Alice", "Bob", "Carol"])?;
+        tally.add(vec!["Alice", "Bob", "Carol"])?;
+        tally.add(vec!["Alice", "Bob", "Carol"])?;
+
+        let totals = tally.totals();
+        let totals = HashSet::from_iter(totals.iter().cloned()); // As a hashset.
+        assert_eq!(
+            totals,
+            hashset![(("Alice", "Bob"), 3), (("Bob", "Carol"), 3), (("Alice", "Carol"), 3),]
+        );
 
         let winners = tally.winners();
         assert_eq!(winners.into_vec(), vec! {("Alice", 0), ("Bob", 1)});
 
         // Test a non-transitive voting paradox
         let mut tally = DefaultCondorcetTally::new(1);
-        tally.add(vec!["Alice", "Bob", "Cir"])?;
-        tally.add(vec!["Bob", "Cir", "Alice"])?;
-        tally.add(vec!["Cir", "Alice", "Bob"])?;
+        tally.add(vec!["Alice", "Bob", "Carol"])?;
+        tally.add(vec!["Bob", "Carol", "Alice"])?;
+        tally.add(vec!["Carol", "Alice", "Bob"])?;
 
         let winners = tally.winners();
         assert_eq!(winners.rank(&"Alice").unwrap(), 0);
         assert_eq!(winners.rank(&"Bob").unwrap(), 0);
-        assert_eq!(winners.rank(&"Cir").unwrap(), 0);
+        assert_eq!(winners.rank(&"Carol").unwrap(), 0);
 
         Ok(())
     }
@@ -348,11 +358,35 @@ mod tests {
     #[test]
     fn condorcet_wikipedia() -> Result<(), TallyError> {
         // From: https://en.wikipedia.org/wiki/Condorcet_method
-        let mut tally = DefaultCondorcetTally::new(4);
+        let mut tally = DefaultCondorcetTally::with_capacity(4, 4);
         tally.add_weighted(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"], 42)?;
         tally.add_weighted(vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"], 26)?;
         tally.add_weighted(vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"], 15)?;
         tally.add_weighted(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"], 17)?;
+
+        let candidates = tally.candidates();
+        let candidates = HashSet::from_iter(candidates.iter().cloned()); // As a hashset
+        assert_eq!(candidates, hashset!["Memphis", "Nashville", "Chattanooga", "Knoxville"]);
+
+        let totals = tally.totals();
+        let totals = HashSet::from_iter(totals.iter().cloned()); // As a hashset
+        assert_eq!(
+            totals,
+            hashset![
+                (("Memphis", "Nashville"), 42),
+                (("Nashville", "Memphis"), 58),
+                (("Memphis", "Chattanooga"), 42),
+                (("Chattanooga", "Memphis"), 58),
+                (("Memphis", "Knoxville"), 42),
+                (("Knoxville", "Memphis"), 58),
+                (("Nashville", "Chattanooga"), 68),
+                (("Chattanooga", "Nashville"), 32),
+                (("Nashville", "Knoxville"), 68),
+                (("Knoxville", "Nashville"), 32),
+                (("Chattanooga", "Knoxville"), 83),
+                (("Knoxville", "Chattanooga"), 17),
+            ]
+        );
 
         let winners = tally.winners();
         assert_eq!(
