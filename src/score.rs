@@ -193,6 +193,9 @@ mod tests {
         assert_eq!(ranked, vec![("Nashville", 0), ("Chattanooga", 1), ("Memphis", 2), ("Knoxville", 3)]);
 
         let winners = tally.winners();
-        assert_eq!(winners.contains(&"Nashville"), true);
+        assert_eq!(winners.is_empty(), false);
+        assert_eq!(winners.check_overflow(), false);
+        assert_eq!(winners.overflow(), Option::None);
+        assert_eq!(winners.all(), vec!["Nashville"]);
     }
 }

@@ -348,6 +348,10 @@ mod tests {
         tally.add(vec!["Carol", "Alice", "Bob"])?;
 
         let winners = tally.winners();
+        assert_eq!(winners.is_empty(), false);
+        assert_eq!(winners.check_overflow(), true);
+        assert_eq!(winners.all().len(), 3);
+        assert_eq!(winners.overflow().unwrap().len(), 3);
         assert_eq!(winners.rank(&"Alice").unwrap(), 0);
         assert_eq!(winners.rank(&"Bob").unwrap(), 0);
         assert_eq!(winners.rank(&"Carol").unwrap(), 0);

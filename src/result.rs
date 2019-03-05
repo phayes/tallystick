@@ -43,7 +43,7 @@ impl<T: Clone + Eq> RankedWinners<T> {
   }
 
   /// Get a list of all winners, without rank.
-  pub fn all(self) -> Vec<T> {
+  pub fn all(&self) -> Vec<T> {
     let mut winners = Vec::<T>::with_capacity(self.len());
     for (winner, _) in self.winners.iter() {
       winners.push(winner.clone());
