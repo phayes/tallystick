@@ -1,3 +1,6 @@
+// TODO: Remove this allow
+#![allow(missing_docs)]
+
 use hashbrown::HashMap;
 use num_traits::cast::NumCast;
 use num_traits::Num;
