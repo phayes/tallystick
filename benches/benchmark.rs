@@ -9,13 +9,36 @@ use rand::prelude::*;
 use std::cmp::Eq;
 use std::hash::Hash;
 
-criterion_group!(benches, borda_benchmark, condorcet_benchmark, stv_benchmark, plurality_benchmark);
+criterion_group!(
+    benches,
+    borda_benchmark,
+    condorcet_benchmark,
+    stv_benchmark,
+    plurality_benchmark,
+    approval_benchmark
+);
 criterion_main!(benches);
 
 fn plurality_benchmark(c: &mut Criterion) {
     c.bench(
         "plurality",
-        Benchmark::new("random/10K", |b| b.iter(|| plurality(random_single_votes(100_00), 10)))
+        Benchmark::new("random/10K", |b| b.iter(|| plurality(random_single_votes(10_000), 10)))
+            .sample_size(50)
+            .throughput(Throughput::Elements(10_000)),
+    );
+}
+
+fn approval_benchmark(c: &mut Criterion) {
+    c.bench(
+        "approval",
+        Benchmark::new("static/10K", |b| b.iter(|| approval(static_transitive_votes(10_000), 4)))
+            .sample_size(50)
+            .throughput(Throughput::Elements(10_000)),
+    );
+
+    c.bench(
+        "approval",
+        Benchmark::new("random/10K", |b| b.iter(|| approval(random_transitive_votes(10_000), 10)))
             .sample_size(50)
             .throughput(Throughput::Elements(10_000)),
     );
@@ -98,6 +121,16 @@ fn stv<T: Eq + Clone + Hash + std::fmt::Debug>(mut votes: Vec<Vec<T>>, num_candi
 
 fn plurality<T: Eq + Clone + Hash>(mut votes: Vec<T>, num_candidates: usize) {
     let mut tally = tallystick::plurality::DefaultPluralityTally::with_capacity(1, num_candidates);
+
+    for vote in votes.drain(0..) {
+        tally.add(vote);
+    }
+
+    tally.winners();
+}
+
+fn approval<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
+    let mut tally = tallystick::approval::DefaultApprovalTally::with_capacity(1, num_candidates);
 
     for vote in votes.drain(0..) {
         tally.add(vote);

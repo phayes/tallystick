@@ -27,7 +27,7 @@ tallystick is a work-in-progress rust library for tallying votes.
 | -------|-------------------|--------------------------------------|------------------|---------------------------|
 | ✓      | Plurality         |                                      | 100 million v/s  | First Past the Post (FPTP)|
 | ⚠      | Score             |                                      |                  |                           |
-| ⚠      | Approval          |                                      |                  |                           |
+| ✓      | Approval          |                                      | 4 million v/s    |                           |
 | ⚠      | STV               | Newland-Britton, Meek, Warren        | 3 million v/s    | Single Transferable Vote  |
 |        | CPO-STV           |                                      |                  |                           |
 |        | Instant Runoff    |                                      |                  |                           |
