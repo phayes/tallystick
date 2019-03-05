@@ -190,10 +190,10 @@ mod tests {
         tally.add(vec![scream]);
 
         let totals = tally.totals();
-        assert!(totals == vec![(matrix, 7), (scream, 6), (titanic, 5)]);
+        assert_eq!(totals, vec![(matrix, 7), (scream, 6), (titanic, 5)]);
 
         let ranked = tally.ranked();
-        assert!(ranked == vec![(matrix, 0), (scream, 1), (titanic, 2)]);
+        assert_eq!(ranked, vec![(matrix, 0), (scream, 1), (titanic, 2)]);
 
         let winners = tally.winners();
         assert_eq!(winners.contains(&matrix), true);
