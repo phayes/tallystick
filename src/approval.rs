@@ -6,6 +6,24 @@ use std::ops::AddAssign;
 use super::plurality::PluralityTally;
 use super::result::RankedWinners;
 
+/// An approval tally using `u64` integers to count votes.
+/// `DefaultApprovalTally` is generally preferred over `ApprovalTally`.
+/// Since this is an alias, refer to [`ApprovalTally`](struct.ApprovalTally.html) for method documentation.
+///
+/// # Example
+/// ```
+///    use tallystick::approval::DefaultApprovalTally;
+///
+///    // An election for Judge
+///    let mut tally = DefaultApprovalTally::<&str>::new(1);
+///    tally.add(vec!["Judge Judy", "Notorious RBG"]);
+///    tally.add(vec!["Judge Dredd"]);
+///    tally.add(vec!["Abe Vigoda", "Notorious RBG"]);
+///    tally.add(vec!["Judge Dredd", "Notorious RBG"]);
+///
+///    let winners = tally.winners().into_unranked();
+///    assert!(winners[0] == "Notorious RBG");
+/// ```
 pub type DefaultApprovalTally<T> = ApprovalTally<T, u64>;
 
 pub struct ApprovalTally<T, C = u64>
