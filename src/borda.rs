@@ -330,9 +330,11 @@ where
 }
 
 /// TODO: Stub
+#[allow(dead_code)]
 pub type DefaultNansonTally<T> = NansonTally<T, u64>;
 
 /// TODO: Stub
+#[allow(dead_code)]
 pub struct NansonTally<T, C = u64>
 where
   T: Eq + Clone + Hash,                             // Candidate
@@ -342,9 +344,11 @@ where
 }
 
 /// TODO: Stub
+#[allow(dead_code)]
 pub type DefaultBaldwinTally<T> = BaldwinTally<T, u64>;
 
 /// TODO: Stub
+#[allow(dead_code)]
 pub struct BaldwinTally<T, C = u64>
 where
   T: Eq + Clone + Hash,                             // Candidate
