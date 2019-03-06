@@ -303,20 +303,15 @@ mod tests {
   fn schulze_example_4() {
     // See Example 4: https://arxiv.org/pdf/1804.02973.pdf
 
-    let mut tally = DefaultSchulzeTally::new(2); // Ideally two winners
+    let mut tally = DefaultSchulzeTally::new(1);
     tally.add_weighted(vec!["a", "b", "c", "d"], 12);
     tally.add_weighted(vec!["a", "d", "b", "c"], 6);
     tally.add_weighted(vec!["b", "c", "d", "a"], 9);
     tally.add_weighted(vec!["c", "d", "a", "b"], 15);
     tally.add_weighted(vec!["d", "b", "a", "c"], 21);
 
-    // Verify ranking
+    // Verify ranking - "a" and "b" are tied.
     let ranked = tally.ranked();
     assert_eq!(ranked, vec![("d", 0), ("b", 1), ("a", 1), ("c", 2)]);
-
-    // Confirm that there's an overflow
-    let winners = tally.winners();
-    assert_eq!(winners.len(), 3); // d,b,a
-    assert!(winners.check_overflow());
   }
 }

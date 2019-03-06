@@ -13,6 +13,7 @@ criterion_group!(
     benches,
     borda_benchmark,
     condorcet_benchmark,
+    schulze_benchmark,
     stv_benchmark,
     plurality_benchmark,
     approval_benchmark,
@@ -88,6 +89,22 @@ fn stv_benchmark(c: &mut Criterion) {
     );
 }
 
+fn schulze_benchmark(c: &mut Criterion) {
+    c.bench(
+        "schulze",
+        Benchmark::new("static/10K", |b| b.iter(|| schulze(static_transitive_votes(10_000), 4)))
+            .sample_size(50)
+            .throughput(Throughput::Elements(10_000)),
+    );
+
+    c.bench(
+        "schulze",
+        Benchmark::new("random/10K", |b| b.iter(|| schulze(random_transitive_votes(10_000), 10)))
+            .sample_size(50)
+            .throughput(Throughput::Elements(10_000)),
+    );
+}
+
 fn borda_benchmark(c: &mut Criterion) {
     c.bench(
         "borda",
@@ -121,6 +138,16 @@ fn condorcet<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize
 
 fn stv<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
     let mut tally = tallystick::stv::DefaultTally::with_capacity(1, tallystick::Quota::Droop, num_candidates, votes.len());
+
+    for vote in votes.drain(0..) {
+        tally.add(vote);
+    }
+
+    tally.winners();
+}
+
+fn schulze<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
+    let mut tally = tallystick::schulze::DefaultSchulzeTally::with_capacity(1, votes.len());
 
     for vote in votes.drain(0..) {
         tally.add(vote);
