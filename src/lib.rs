@@ -9,6 +9,7 @@
 #![warn(missing_docs)]
 #![feature(nll)]
 #![feature(specialization)]
+#![feature(crate_visibility_modifier)]
 
 /// Plurality voting is an electoral system in which each voter is allowed to vote for only one candidate
 /// and the candidate who polls the most among their counterparts (a plurality) is elected. It may be called
@@ -54,6 +55,13 @@ pub mod stv;
 ///
 /// The Condorcet method isn't guarunteed to produce a single-winner due to the non-transitive nature of group choice.
 pub mod condorcet;
+
+/// The Schulze method is an voting system that selects a single winner using votes that express preferences.
+/// The method can also be used to create a sorted list of winners.
+/// The Schulze method is also known as Schwartz Sequential dropping (SSD), cloneproof Schwartz sequential dropping (CSSD), the beatpath method, beatpath winner, path voting, and path winner.
+///
+/// The Schulze method is a Condorcet method, which means that if there is a candidate who is preferred by a majority over every other candidate in pairwise comparisons, then this candidate will be the winner when the Schulze method is applied.
+pub mod schulze;
 
 /// The Borda count is a family of election methods in which voters rank candidates in order of preference.
 /// The Borda count determines the winner by giving each candidate, for each ballot, a number of points corresponding to the number of candidates ranked lower.

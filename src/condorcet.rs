@@ -61,9 +61,9 @@ where
     T: Eq + Clone + Hash,                             // Candidate type
     C: Copy + PartialOrd + AddAssign + Num + NumCast, // Count type
 {
-    running_total: HashMap<(usize, usize), C>,
-    num_winners: u32,
-    candidates: HashMap<T, usize>, // Map candiates to a unique integer identifiers
+    crate running_total: HashMap<(usize, usize), C>,
+    crate num_winners: u32,
+    crate candidates: HashMap<T, usize>, // Map candiates to a unique integer identifiers
 }
 
 impl<T, C> CondorcetTally<T, C>
