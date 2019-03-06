@@ -10,6 +10,29 @@ use super::plurality::PluralityTally;
 use super::result::CountedCandidates;
 use super::result::RankedWinners;
 
+/// Specifies method used to measure the strength of a link in a set of strongest paths. `Winning` variant is recommended.
+pub enum Variant {
+  /// Strength of a link is measured by its support. You should use this variant if you are unsure.
+  ///
+  /// When the strength of the link `ef` is measured by winning votes, then its strength is measured primarily by its support `N[e,f]`.
+  Winning,
+
+  /// The strength of a link is measured by the difference between its support and opposition.
+  ///
+  /// When the strength of the link `ef` is measured by margin, then its strength is the difference `N[e,f] – N[f,e]` between its support `N[e,f]` and its opposition `N[f,e]`.
+  Margin,
+
+  /// The strength of a link is measured by the ratio of its support and opposition.
+  ///
+  /// When the strength of the link `ef` is measured by ratio, then its strength is the ratio `N[e,f] / N[f,e]` between its support `N[e,f]` and its opposition `N[f,e]`.
+  Ratio,
+
+  /// The strength of a link is measured by its opposition. Not recommended.
+  ///
+  /// When the strength of the link `ef` is measured by losing votes, then its strength is measured primarily by its opposition `N[f,e]`.
+  Losing,
+}
+
 /// A schulze tally using `u64` integers to count votes.
 /// `DefaultSchulzeTally` is generally preferred over `SchulzeTally`.
 /// Since this is an alias, refer to [`Schulze`](struct.Schulze.html) for method documentation.
@@ -17,9 +40,10 @@ use super::result::RankedWinners;
 /// # Example
 /// ```
 ///    use tallystick::schulze::DefaultSchulzeTally;
+///    use tallystick::schulze::Variant;
 ///
 ///    // An election for Judge
-///    let mut tally = DefaultSchulzeTally::<&str>::new(1);
+///    let mut tally = DefaultSchulzeTally::<&str>::new(1, Variant::Winning);
 ///    tally.add(vec!["Notorious RBG", "Judge Judy"]);
 ///    tally.add(vec!["Judge Dredd"]);
 ///    tally.add(vec!["Abe Vigoda", "Notorious RBG"]);
@@ -39,9 +63,10 @@ pub type DefaultSchulzeTally<T> = SchulzeTally<T, u64>;
 /// # Example
 /// ```
 ///    use tallystick::schulze::SchulzeTally;
+///    use tallystick::schulze::Variant;
 ///
 ///    // An election for Judge using floats as the count type.
-///    let mut tally = SchulzeTally::<&str, f64>::new(1);
+///    let mut tally = SchulzeTally::<&str, f64>::new(1, Variant::Ratio);
 ///    tally.add_weighted(vec!["Notorious RBG", "Judge Judy"], 0.5);
 ///    tally.add_weighted(vec!["Judge Dredd"], 2.0);
 ///    tally.add_weighted(vec!["Abe Vigoda", "Notorious RBG"], 3.2);
@@ -55,6 +80,7 @@ where
   T: Eq + Clone + Hash,                             // Candidate
   C: Copy + PartialOrd + AddAssign + Num + NumCast, // Vote count type
 {
+  variant: Variant,
   condorcet: CondorcetTally<T, C>,
 }
 
@@ -67,15 +93,17 @@ where
   ///
   /// If there is a tie, the number of winners might be more than `num_winners`.
   /// (See [`winners()`](#method.winners) for more information on ties.)
-  pub fn new(num_winners: u32) -> Self {
+  pub fn new(num_winners: u32, variant: Variant) -> Self {
     return SchulzeTally {
+      variant: variant,
       condorcet: CondorcetTally::new(num_winners),
     };
   }
 
   /// Create a new `SchulzeTally` with the given number of winners, and number of expected candidates.
-  pub fn with_capacity(num_winners: u32, expected_candidates: usize) -> Self {
+  pub fn with_capacity(num_winners: u32, variant: Variant, expected_candidates: usize) -> Self {
     return SchulzeTally {
+      variant: variant,
       condorcet: CondorcetTally::with_capacity(num_winners, expected_candidates),
     };
   }
@@ -119,7 +147,13 @@ where
     for ((i, j), count) in self.condorcet.running_total.iter() {
       let count_2 = self.condorcet.running_total.get(&(*j, *i)).unwrap_or(&zero);
       if count > count_2 {
-        p.insert((*i, *j), *count);
+        let strength = match self.variant {
+          Variant::Winning => *count,
+          Variant::Margin => *count - *count_2,
+          Variant::Ratio => *count / *count_2,
+          Variant::Losing => *count_2,
+        };
+        p.insert((*i, *j), strength);
       } else {
         p.insert((*i, *j), zero);
       }
@@ -218,7 +252,7 @@ mod tests {
   fn schulze_wikipedia() {
     // See: https://en.wikipedia.org/wiki/Schulze_method
 
-    let mut tally = DefaultSchulzeTally::new(1);
+    let mut tally = DefaultSchulzeTally::new(1, Variant::Winning);
     tally.add_weighted(vec!["A", "C", "B", "E", "D"], 5);
     tally.add_weighted(vec!["A", "D", "E", "C", "B"], 5);
     tally.add_weighted(vec!["B", "E", "D", "A", "C"], 8);
@@ -303,7 +337,7 @@ mod tests {
   fn schulze_example_4() {
     // See Example 4: https://arxiv.org/pdf/1804.02973.pdf
 
-    let mut tally = DefaultSchulzeTally::new(1);
+    let mut tally = DefaultSchulzeTally::new(1, Variant::Winning);
     tally.add_weighted(vec!["a", "b", "c", "d"], 12);
     tally.add_weighted(vec!["a", "d", "b", "c"], 6);
     tally.add_weighted(vec!["b", "c", "d", "a"], 9);

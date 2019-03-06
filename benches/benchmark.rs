@@ -147,7 +147,7 @@ fn stv<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
 }
 
 fn schulze<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
-    let mut tally = tallystick::schulze::DefaultSchulzeTally::with_capacity(1, votes.len());
+    let mut tally = tallystick::schulze::DefaultSchulzeTally::with_capacity(1, tallystick::schulze::Variant::Winning, votes.len());
 
     for vote in votes.drain(0..) {
         tally.add(vote);
