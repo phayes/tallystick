@@ -183,7 +183,7 @@ where
     for ((candidate_1, candidate_2), strength_1) in strongest_hash.iter() {
       // Cloning here is dumb, but unable to construct a key tuple otherwise
       let strength_2 = strongest_hash.get(&(candidate_2.clone(), candidate_1.clone())).unwrap_or(&zero);
-      if strength_1 > strength_2 {
+      if strength_1 >= strength_2 {
         running_total.add_ref(candidate_1);
       } else {
         // Add it with a weight of zero
@@ -295,6 +295,28 @@ mod tests {
     }
 
     // Verify ranking
-    dbg!(tally.ranked());
+    let ranked = tally.ranked();
+    assert_eq!(ranked, vec![("E", 0), ("A", 1), ("C", 2), ("B", 3), ("D", 4)]);
+  }
+
+  #[test]
+  fn schulze_example_4() {
+    // See Example 4: https://arxiv.org/pdf/1804.02973.pdf
+
+    let mut tally = DefaultSchulzeTally::new(2); // Ideally two winners
+    tally.add_weighted(vec!["a", "b", "c", "d"], 12);
+    tally.add_weighted(vec!["a", "d", "b", "c"], 6);
+    tally.add_weighted(vec!["b", "c", "d", "a"], 9);
+    tally.add_weighted(vec!["c", "d", "a", "b"], 15);
+    tally.add_weighted(vec!["d", "b", "a", "c"], 21);
+
+    // Verify ranking
+    let ranked = tally.ranked();
+    assert_eq!(ranked, vec![("d", 0), ("b", 1), ("a", 1), ("c", 2)]);
+
+    // Confirm that there's an overflow
+    let winners = tally.winners();
+    assert_eq!(winners.len(), 3); // d,b,a
+    assert!(winners.check_overflow());
   }
 }

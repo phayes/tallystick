@@ -34,7 +34,7 @@ tallystick is a work-in-progress rust library for tallying votes.
 |        | Contingent        |                                      |                  |                           |
 | ✓      | Condorcet         |                                      | 2 million v/s    |                           |
 |        | Copeland          |                                      |                  |                           |
-| ⚠      | Schulze           | Winning, Margin, Ratio               |                  |                           |
+| ⚠      | Schulze           |                                      |                  |                           |
 |        | Schulze STV       |                                      |                  |                           |
 |        | Kemeny–Young      |                                      |                  |                           |
 |        | Minimax           |                                      |                  |                           |
