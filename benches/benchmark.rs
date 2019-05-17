@@ -1,13 +1,11 @@
-#[macro_use]
-extern crate criterion;
 use tallystick;
 
-use criterion::Benchmark;
-use criterion::Criterion;
-use criterion::Throughput;
+use criterion::{Benchmark, Criterion, Throughput, criterion_group, criterion_main};
 use rand::prelude::*;
 use std::cmp::Eq;
 use std::hash::Hash;
+
+const SAMPLE_SIZE: usize = 100;
 
 criterion_group!(
     benches,
@@ -25,7 +23,7 @@ fn plurality_benchmark(c: &mut Criterion) {
     c.bench(
         "plurality",
         Benchmark::new("random/10K", |b| b.iter(|| plurality(random_single_votes(10_000), 10)))
-            .sample_size(50)
+            .sample_size(SAMPLE_SIZE)
             .throughput(Throughput::Elements(10_000)),
     );
 }
@@ -34,14 +32,14 @@ fn approval_benchmark(c: &mut Criterion) {
     c.bench(
         "approval",
         Benchmark::new("static/10K", |b| b.iter(|| approval(static_transitive_votes(10_000), 4)))
-            .sample_size(50)
+            .sample_size(SAMPLE_SIZE)
             .throughput(Throughput::Elements(10_000)),
     );
 
     c.bench(
         "approval",
         Benchmark::new("random/10K", |b| b.iter(|| approval(random_transitive_votes(10_000), 10)))
-            .sample_size(50)
+            .sample_size(SAMPLE_SIZE)
             .throughput(Throughput::Elements(10_000)),
     );
 }
@@ -50,7 +48,7 @@ fn score_benchmark(c: &mut Criterion) {
     c.bench(
         "score",
         Benchmark::new("random/10K", |b| b.iter(|| score(random_scored_votes(10_000), 4)))
-            .sample_size(50)
+            .sample_size(SAMPLE_SIZE)
             .throughput(Throughput::Elements(10_000)),
     );
 }
@@ -60,7 +58,7 @@ fn condorcet_benchmark(c: &mut Criterion) {
     c.bench(
         "condorcet",
         Benchmark::new("static/10K", |b| b.iter(|| condorcet(static_transitive_votes(10_000), 10)))
-            .sample_size(50)
+            .sample_size(SAMPLE_SIZE)
             .throughput(Throughput::Elements(10_000)),
     );
 
@@ -68,7 +66,7 @@ fn condorcet_benchmark(c: &mut Criterion) {
     c.bench(
         "condorcet",
         Benchmark::new("random/10K", |b| b.iter(|| condorcet(random_transitive_votes(10_000), 10)))
-            .sample_size(50)
+            .sample_size(SAMPLE_SIZE)
             .throughput(Throughput::Elements(10_000)),
     );
 }
@@ -77,14 +75,14 @@ fn stv_benchmark(c: &mut Criterion) {
     c.bench(
         "stv",
         Benchmark::new("static/10K", |b| b.iter(|| stv(static_transitive_votes(10_000), 4)))
-            .sample_size(50)
+            .sample_size(SAMPLE_SIZE)
             .throughput(Throughput::Elements(10_000)),
     );
 
     c.bench(
         "stv",
         Benchmark::new("random/10K", |b| b.iter(|| stv(random_transitive_votes(10_000), 10)))
-            .sample_size(50)
+            .sample_size(SAMPLE_SIZE)
             .throughput(Throughput::Elements(10_000)),
     );
 }
@@ -93,14 +91,14 @@ fn schulze_benchmark(c: &mut Criterion) {
     c.bench(
         "schulze",
         Benchmark::new("static/10K", |b| b.iter(|| schulze(static_transitive_votes(10_000), 4)))
-            .sample_size(50)
+            .sample_size(SAMPLE_SIZE)
             .throughput(Throughput::Elements(10_000)),
     );
 
     c.bench(
         "schulze",
         Benchmark::new("random/10K", |b| b.iter(|| schulze(random_transitive_votes(10_000), 10)))
-            .sample_size(50)
+            .sample_size(SAMPLE_SIZE)
             .throughput(Throughput::Elements(10_000)),
     );
 }
@@ -109,14 +107,14 @@ fn borda_benchmark(c: &mut Criterion) {
     c.bench(
         "borda",
         Benchmark::new("static/10K", |b| b.iter(|| borda(static_transitive_votes(10_000), 4)))
-            .sample_size(50)
+            .sample_size(SAMPLE_SIZE)
             .throughput(Throughput::Elements(10_000)),
     );
 
     c.bench(
         "borda",
         Benchmark::new("random/10K", |b| b.iter(|| borda(random_transitive_votes(10_000), 10)))
-            .sample_size(50)
+            .sample_size(SAMPLE_SIZE)
             .throughput(Throughput::Elements(10_000)),
     );
 }
@@ -126,11 +124,7 @@ fn condorcet<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize
     let mut tally = tallystick::condorcet::DefaultCondorcetTally::with_capacity(1, num_candidates);
 
     for vote in votes.drain(0..) {
-        let res = tally.add(vote);
-        match res {
-            Err(_) => panic!("Error adding vote to condorcet tally"),
-            Ok(_) => (),
-        }
+        tally.add(vote);
     }
 
     tally.winners();
@@ -147,7 +141,7 @@ fn stv<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
 }
 
 fn schulze<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
-    let mut tally = tallystick::schulze::DefaultSchulzeTally::with_capacity(1, tallystick::schulze::Variant::Winning, votes.len());
+    let mut tally = tallystick::schulze::DefaultSchulzeTally::with_capacity(1, tallystick::schulze::Variant::Winning, num_candidates);
 
     for vote in votes.drain(0..) {
         tally.add(vote);
@@ -157,9 +151,9 @@ fn schulze<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) 
 }
 
 fn plurality<T: Eq + Clone + Hash>(mut votes: Vec<T>, num_candidates: usize) {
-    let mut tally = tallystick::plurality::DefaultPluralityTally::with_capacity(1, num_candidates);
+    let mut tally = tallystick::plurality::PluralityTally::<T, u64>::with_capacity(1, num_candidates);
 
-    for vote in votes.drain(0..) {
+    for vote in votes.drain(..) {
         tally.add(vote);
     }
 
