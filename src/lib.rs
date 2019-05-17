@@ -11,6 +11,8 @@
 #![feature(specialization)]
 #![feature(crate_visibility_modifier)]
 
+mod util;
+
 /// Plurality voting is an electoral system in which each voter is allowed to vote for only one candidate
 /// and the candidate who polls the most among their counterparts (a plurality) is elected. It may be called
 /// first-past-the-post (FPTP), single-choice voting, simple plurality, or relative/simple majority.
