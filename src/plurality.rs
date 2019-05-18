@@ -206,7 +206,7 @@ mod tests {
     #[test]
     fn plurality_test() {
         // Election between Alice, Bob, and Cir
-        let mut tally = DefaultPluralityTally::new(2);
+        let mut tally = PluralityTally::new(2);
         tally.add("Alice");
         tally.add("Cir");
         tally.add("Bob");
