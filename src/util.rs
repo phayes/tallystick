@@ -1,5 +1,8 @@
-use std::io::BufRead;
+pub use crate::errors::ParseError;
+use num_traits::Num;
+use std::fmt::Debug;
 use std::io::BufReader;
+use std::io::BufRead;
 
 #[derive(Debug)]
 pub enum ParsedVote {
@@ -7,28 +10,33 @@ pub enum ParsedVote {
   Ranked(Vec<(String, u32)>),
 }
 
-pub fn read_votes<T: std::io::Read>(votes: T) -> Vec<(ParsedVote, u64)> {
-  let mut reader = BufReader::new(votes);
+pub fn read_votes<T: std::io::Read, C: Num + Debug>(votes: T) -> Result<Vec<(ParsedVote, C)>, ParseError> {
+  let reader = BufReader::new(votes);
 
   let mut res = Vec::new();
   for line in reader.lines() {
-    let line = line.unwrap(); // TODO: Handle this
+    let line = line?;
     if line.trim().len() > 0 {
-      res.push(parse_line_into_vote(&line))
+      res.push(parse_line_into_vote(&line)?)
     }
   }
 
-  return res;
+  return Ok(res);
 }
 
-fn parse_line_into_vote(line: &str) -> (ParsedVote, u64) {
+fn parse_line_into_vote<C: Num + Debug>(line: &str) -> Result<(ParsedVote, C), ParseError> {
   let parts: Vec<&str> = line.trim().split("*").collect();
 
   let weight;
   if parts.len() == 1 {
-    weight = 1;
+    weight = C::one();
   } else {
-    weight = parts[1].trim().parse::<u64>().unwrap();
+    weight = match C::from_str_radix(parts[1].trim(), 10) {
+      Ok(num) => num,
+      Err(_) => {
+        return Err(ParseError::ParseError(parts[1].trim().to_string()));
+      }
+    }
   }
 
   let mut vote = Vec::<(String, u32)>::new();
@@ -53,12 +61,12 @@ fn parse_line_into_vote(line: &str) -> (ParsedVote, u64) {
   }
 
   if is_ranked {
-    return (ParsedVote::Ranked(vote), weight);
+    return Ok((ParsedVote::Ranked(vote), weight));
   } else {
     let mut unranked_vote = Vec::<String>::with_capacity(vote.len());
     for (vote, _rank) in vote.drain(..) {
       unranked_vote.push(vote);
     }
-    return (ParsedVote::Unranked(unranked_vote), weight);
+    return Ok((ParsedVote::Unranked(unranked_vote), weight));
   }
 }

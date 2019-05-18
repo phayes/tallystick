@@ -11,7 +11,8 @@
 #![feature(specialization)]
 #![feature(crate_visibility_modifier)]
 
-mod util;
+/// Utilities for parsing common vote formats
+pub mod util;
 
 /// Plurality voting is an electoral system in which each voter is allowed to vote for only one candidate
 /// and the candidate who polls the most among their counterparts (a plurality) is elected. It may be called

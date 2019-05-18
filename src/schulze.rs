@@ -1,15 +1,15 @@
 use hashbrown::HashMap;
-use num_traits::cast::NumCast;
-use num_traits::Num;
+use num_traits::{Num, NumCast};
 use petgraph::Graph;
 use std::hash::Hash;
 use std::ops::AddAssign;
+
 
 use super::condorcet::CondorcetTally;
 use super::plurality::PluralityTally;
 use super::result::CountedCandidates;
 use super::result::RankedWinners;
-
+use super::Numeric;
 /// Specifies method used to measure the strength of a link in a set of strongest paths. `Winning` variant is recommended.
 pub enum Variant {
   /// Strength of a link is measured by its support. You should use this variant if you are unsure.
@@ -95,6 +95,7 @@ where
   /// If there is a tie, the number of winners might be more than `num_winners`.
   /// (See [`winners()`](#method.winners) for more information on ties.)
   pub fn new(num_winners: u32, variant: Variant) -> Self {
+    Self::check_types(&variant);
     return SchulzeTally {
       variant: variant,
       condorcet: CondorcetTally::new(num_winners),
@@ -103,6 +104,7 @@ where
 
   /// Create a new `SchulzeTally` with the given number of winners, and number of expected candidates.
   pub fn with_capacity(num_winners: u32, variant: Variant, expected_candidates: usize) -> Self {
+    Self::check_types(&variant);
     return SchulzeTally {
       variant: variant,
       condorcet: CondorcetTally::with_capacity(num_winners, expected_candidates),
@@ -110,7 +112,7 @@ where
   }
 
   /// Add a new vote
-  pub fn add(&mut self, mut selection: Vec<T>) {
+  pub fn add(&mut self, selection: Vec<T>) {
     self.condorcet.add(selection);
   }
 
@@ -121,7 +123,7 @@ where
 
   /// Add a weighted vote.
   /// By default takes a weight as a `usize` integer, but can be customized by using `SchulzeTally` with a custom count type.
-  pub fn add_weighted(&mut self, mut selection: Vec<T>, weight: C) {
+  pub fn add_weighted(&mut self, selection: Vec<T>, weight: C) {
     self.condorcet.add_weighted(selection, weight);
   }
 
@@ -188,9 +190,7 @@ where
             if count_2 != &zero {
               *count / *count_2
             } else {
-              panic!("Schulze Ratio with zero demoninator between")
-              // TODO: Review literature to see what to do here
-              // TODO: Likely requires specialization so we can return C::max()
+              C::max_value()
             }
           }
           Variant::Losing => *count_2,
@@ -283,6 +283,18 @@ where
 
   pub fn build_graph(&self) -> Graph<T, (C, C)> {
     return self.condorcet.build_graph();
+  }
+
+  // Check to make sure that if we are using ratio, we have a bounded and fractional type
+  fn check_types(variant: &Variant) {
+    match variant {
+      Variant::Ratio => {
+        if !C::fraction() || C::max_value() == C::zero() {
+          panic!("tallystick::schulze: Variant::Ratio must be used with a type that is bounded and fractional.");
+        }
+      }
+      _ => {}
+    }
   }
 }
 
@@ -439,7 +451,7 @@ mod tests {
     use crate::util;
     use std::io::Cursor;
 
-    let votes = "
+    let votes_raw = "
     A > B > C > D * 6
     A = B * 8
     A = C * 8
@@ -453,8 +465,8 @@ mod tests {
     D > B > C * 11
     D > C > A * 4";
 
-    let votes = Cursor::new(votes);
-    let votes = util::read_votes(votes);
+    let votes = Cursor::new(votes_raw);
+    let votes = util::read_votes(votes).unwrap();
 
     // Winning
     let mut tally = DefaultSchulzeTally::new(1, Variant::Winning);
@@ -479,7 +491,9 @@ mod tests {
     // assert_eq!(tally.winners().into_unranked()[0], "B".to_string());
 
     // Ratio
-    let mut tally = DefaultSchulzeTally::new(1, Variant::Ratio);
+    let votes = Cursor::new(votes_raw);
+    let votes = util::read_votes(votes).unwrap(); // reparse votes as f64
+    let mut tally = SchulzeTally::<_, f64>::new(1, Variant::Ratio);
     for (vote, weight) in votes.iter() {
       match vote {
         util::ParsedVote::Ranked(v) => tally.ranked_add_weighted_ref(v, *weight),
@@ -487,8 +501,6 @@ mod tests {
       }
     }
 
-    // TODO: Panicking test due to divide-by-zero, review literature
-    //       on what to do when one pair in the graph has infinite stregnth ratio.
-    //assert_eq!(tally.winners().into_unranked()[0], "D".to_string());
+    assert_eq!(tally.winners().into_unranked()[0], "D".to_string());
   }
 }

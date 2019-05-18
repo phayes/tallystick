@@ -18,6 +18,10 @@ pub trait Numeric {
   /// Integer-based types will return false.
   /// Float, or num_rational::Ratio based types should return true.
   fn fraction() -> bool;
+
+  /// Get max upper bound for this numeric type
+  /// If this type has no upper bound, return zero
+  fn max_value() -> Self;
 }
 
 // Default implemention of numeric, assumes everything is an integer (non-fraction).
@@ -27,6 +31,10 @@ impl<T: Num> Numeric for T {
   }
   default fn fraction() -> bool {
     false
+  }
+
+  default fn max_value() -> Self {
+    T::zero()
   }
 }
 
@@ -38,6 +46,9 @@ impl<T: Num + Real> Numeric for T {
   }
   fn fraction() -> bool {
     true
+  }
+  fn max_value() -> Self {
+    T::max_value()
   }
 }
 
