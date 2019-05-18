@@ -17,7 +17,6 @@ tallystick is a work-in-progress rust library for tallying votes.
 6. **Generic** - Generic over both candidate and count types. 
 
 ## Features
-- [ ] `no_std` for embedded use.
 - [ ] `wasm` support for use in the browser, or in blockchain smart contracts.
 - [ ] `rational` support for perfectly-precise tallies by using rational fractions instead of floats.
 
