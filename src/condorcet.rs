@@ -1,6 +1,4 @@
-use super::check_duplicate;
 use super::RankedWinners;
-use super::TallyError;
 use hashbrown::HashMap;
 use num_traits::cast::NumCast;
 use num_traits::Num;
@@ -93,29 +91,31 @@ where
     }
 
     /// Add a new vote
-    pub fn add(&mut self, vote: Vec<T>) -> Result<(), TallyError> {
+    pub fn add(&mut self, vote: Vec<T>) {
         self.add_weighted_ref(&vote, C::one())
     }
 
     /// Add a vote by reference.
-    pub fn add_ref(&mut self, vote: &[T]) -> Result<(), TallyError> {
+    pub fn add_ref(&mut self, vote: &[T]) {
         self.add_weighted_ref(vote, C::one())
     }
 
     /// Add a weighted vote.
     /// By default takes a weight as a `usize` integer, but can be customized by using `CondorcetTally` with a custom count type.
-    pub fn add_weighted(&mut self, vote: Vec<T>, weight: C) -> Result<(), TallyError> {
+    pub fn add_weighted(&mut self, vote: Vec<T>, weight: C) {
         self.add_weighted_ref(&vote, weight)
     }
 
     /// Add a weighted vote by reference.
-    pub fn add_weighted_ref(&mut self, vote: &[T], weight: C) -> Result<(), TallyError> {
+    pub fn add_weighted_ref(&mut self, vote: &[T], weight: C) {
         if vote.is_empty() {
-            return Ok(());
+            return;
         }
-        check_duplicate(vote)?;
 
-        let selection = self.mapped_candidates(&vote);
+        // TODO: make this an optional checked / unchecked
+        //check_duplicate(vote)?;
+
+        let selection = self.unranked_mapped_candidates(&vote);
 
         for (i, candidate) in selection.iter().enumerate() {
             let mut j = i + 1;
@@ -124,8 +124,53 @@ where
                 j += 1;
             }
         }
+    }
 
-        Ok(())
+    /// Add a new ranked vote
+    ///
+    /// A ranked vote is a list of tuples of (candidate, rank), where rank is ascending.
+    /// Two candidates with the same rank are equal in preference.
+    pub fn ranked_add(&mut self, vote: Vec<(T, u32)>) {
+        self.ranked_add_weighted_ref(&vote, C::one())
+    }
+
+    /// Add a ranked vote by reference.
+    ///
+    /// A ranked vote is a list of tuples of (candidate, rank), where rank is ascending.
+    /// Two candidates with the same rank are equal in preference.
+    pub fn ranked_add_ref(&mut self, vote: &[(T, u32)]) {
+        self.ranked_add_weighted_ref(vote, C::one())
+    }
+
+    /// Add a ranked weighted vote.
+    /// By default takes a weight as a `usize` integer, but can be customized by using `CondorcetTally` with a custom count type.
+    ///
+    /// A ranked vote is a list of tuples of (candidate, rank), where rank is ascending.
+    /// Two candidates with the same rank are equal in preference.
+    pub fn ranked_add_weighted(&mut self, vote: Vec<(T, u32)>, weight: C) {
+        self.ranked_add_weighted_ref(&vote, weight)
+    }
+
+    /// Add a new ranked vote with a weight by reference.
+    ///
+    /// A ranked vote is a list of tuples of (candidate, rank), where rank is ascending.
+    /// Two candidates with the same rank are equal in preference.
+    pub fn ranked_add_weighted_ref(&mut self, vote: &[(T, u32)], weight: C) {
+        if vote.is_empty() {
+            return;
+        }
+        // TODO Check duplicates for "unchecked"
+
+        let selection = self.ranked_mapped_candidates(&vote);
+        for (i, (candidate_1, rank_1)) in selection.iter().enumerate() {
+            let mut j = i + 1;
+            while let Some((candidate_2, rank_2)) = selection.get(j) {
+                if rank_1 < rank_2 {
+                    *self.running_total.entry((*candidate_1, *candidate_2)).or_insert(C::zero()) += weight;
+                }
+                j += 1;
+            }
+        }
     }
 
     /// Get total counts for this tally.
@@ -137,8 +182,8 @@ where
     ///    use tallystick::condorcet::DefaultCondorcetTally;
     ///
     ///    let mut tally = DefaultCondorcetTally::new(1);
-    ///    for _ in 0..30 { tally.add(vec!["Alice", "Bob"]).unwrap() }
-    ///    for _ in 0..10 { tally.add(vec!["Bob", "Alice"]).unwrap() }
+    ///    for _ in 0..30 { tally.add(vec!["Alice", "Bob"]) }
+    ///    for _ in 0..10 { tally.add(vec!["Bob", "Alice"]) }
     ///
     ///    for ((candidate1, candidate2), num_votes) in tally.totals().iter() {
     ///       println!("{} is preferred over {} {} times", candidate1, candidate2, num_votes);
@@ -147,7 +192,6 @@ where
     ///    //   Alice is preferred over Bob 30 times
     ///    //   Bob is preferred over Alice 10 times
     /// ```
-    // TODO: 'C' could just be a regular integer (usize?).
     pub fn totals(&self) -> Vec<((T, T), C)> {
         let mut totals = Vec::<((T, T), C)>::with_capacity(self.running_total.len());
 
@@ -301,7 +345,7 @@ where
     }
 
     // Ensure that candidates are in our list of candidates, and return an internal numeric representation of the same
-    fn mapped_candidates(&mut self, selection: &[T]) -> Vec<usize> {
+    fn unranked_mapped_candidates(&mut self, selection: &[T]) -> Vec<usize> {
         let mut mapped = Vec::<usize>::new();
         for selected in selection.iter() {
             if self.candidates.contains_key(&selected) {
@@ -310,6 +354,21 @@ where
                 let len = self.candidates.len();
                 self.candidates.insert(selected.clone(), len);
                 mapped.push(len);
+            }
+        }
+        return mapped;
+    }
+
+    // Ensure that candidates are in our list of candidates, and return an internal numeric representation of the same
+    fn ranked_mapped_candidates(&mut self, selection: &[(T, u32)]) -> Vec<(usize, u32)> {
+        let mut mapped = Vec::<(usize, u32)>::new();
+        for (selected, rank) in selection.iter() {
+            if self.candidates.contains_key(&selected) {
+                mapped.push((*self.candidates.get(&selected).unwrap(), *rank)); // Safe to unwrap here since we just checked it one-line above with contains_key()
+            } else {
+                let len = self.candidates.len();
+                self.candidates.insert(selected.clone(), len);
+                mapped.push((len, *rank));
             }
         }
         return mapped;
@@ -324,18 +383,18 @@ mod tests {
     use std::iter::FromIterator;
 
     #[test]
-    fn condorcet_basic() -> Result<(), TallyError> {
+    fn condorcet_basic() {
         // Election between Alice, Bob, and Carol
         let mut tally = DefaultCondorcetTally::new(2);
-        tally.add(vec!["Alice", "Bob", "Carol"])?;
-        tally.add(vec!["Alice", "Bob", "Carol"])?;
-        tally.add(vec!["Alice", "Bob", "Carol"])?;
+        tally.add(vec!["Alice", "Bob", "Carol"]);
+        tally.add(vec!["Alice", "Bob", "Carol"]);
+        tally.add(vec!["Alice", "Bob", "Carol"]);
 
         let totals = tally.totals();
         let totals = HashSet::from_iter(totals.iter().cloned()); // As a hashset.
         assert_eq!(
             totals,
-            hashset![(("Alice", "Bob"), 3), (("Bob", "Carol"), 3), (("Alice", "Carol"), 3),]
+            hashset![(("Alice", "Bob"), 3), (("Bob", "Carol"), 3), (("Alice", "Carol"), 3)]
         );
 
         let winners = tally.winners();
@@ -343,9 +402,9 @@ mod tests {
 
         // Test a non-transitive voting paradox
         let mut tally = DefaultCondorcetTally::new(1);
-        tally.add(vec!["Alice", "Bob", "Carol"])?;
-        tally.add(vec!["Bob", "Carol", "Alice"])?;
-        tally.add(vec!["Carol", "Alice", "Bob"])?;
+        tally.add(vec!["Alice", "Bob", "Carol"]);
+        tally.add(vec!["Bob", "Carol", "Alice"]);
+        tally.add(vec!["Carol", "Alice", "Bob"]);
 
         let winners = tally.winners();
         assert_eq!(winners.is_empty(), false);
@@ -355,18 +414,16 @@ mod tests {
         assert_eq!(winners.rank(&"Alice").unwrap(), 0);
         assert_eq!(winners.rank(&"Bob").unwrap(), 0);
         assert_eq!(winners.rank(&"Carol").unwrap(), 0);
-
-        Ok(())
     }
 
     #[test]
-    fn condorcet_wikipedia() -> Result<(), TallyError> {
+    fn condorcet_wikipedia() {
         // From: https://en.wikipedia.org/wiki/Condorcet_method
         let mut tally = DefaultCondorcetTally::with_capacity(4, 4);
-        tally.add_weighted(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"], 42)?;
-        tally.add_weighted(vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"], 26)?;
-        tally.add_weighted(vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"], 15)?;
-        tally.add_weighted(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"], 17)?;
+        tally.add_weighted(vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"], 42);
+        tally.add_weighted(vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"], 26);
+        tally.add_weighted(vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"], 15);
+        tally.add_weighted(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"], 17);
 
         let candidates = tally.candidates();
         let candidates = HashSet::from_iter(candidates.iter().cloned()); // As a hashset
@@ -397,21 +454,19 @@ mod tests {
             winners.into_vec(),
             vec! {("Nashville", 0), ("Chattanooga", 1), ("Knoxville", 2), ("Memphis", 3)}
         );
-
-        Ok(())
     }
 
     #[test]
-    fn condorcet_graph() -> Result<(), TallyError> {
+    fn condorcet_graph() {
         // From: https://arxiv.org/pdf/1804.02973.pdf
 
         // Example 1:
         let mut tally = DefaultCondorcetTally::new(1);
-        tally.add_weighted(vec!["a", "c", "d", "b"], 8)?;
-        tally.add_weighted(vec!["b", "a", "d", "c"], 2)?;
-        tally.add_weighted(vec!["c", "d", "b", "a"], 4)?;
-        tally.add_weighted(vec!["d", "b", "a", "c"], 4)?;
-        tally.add_weighted(vec!["d", "c", "b", "a"], 3)?;
+        tally.add_weighted(vec!["a", "c", "d", "b"], 8);
+        tally.add_weighted(vec!["b", "a", "d", "c"], 2);
+        tally.add_weighted(vec!["c", "d", "b", "a"], 4);
+        tally.add_weighted(vec!["d", "b", "a", "c"], 4);
+        tally.add_weighted(vec!["d", "c", "b", "a"], 3);
 
         let graph = tally.build_graph();
         assert_eq!(graph.node_count(), 4);
@@ -429,7 +484,5 @@ mod tests {
                 }
             }
         }
-
-        Ok(())
     }
 }
