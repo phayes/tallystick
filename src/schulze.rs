@@ -30,11 +30,6 @@ pub enum Variant {
   ///
   /// If Ratio is selected, tallystick will panic if an integer count type is used in the tally. This variant should only be used with a float tally.
   Ratio,
-
-  /// The strength of a link is measured by its opposition. Not recommended.
-  ///
-  /// When the strength of the link `ef` is measured by losing votes, then its strength is measured primarily by its opposition `N[f,e]`.
-  Losing,
 }
 
 /// A schulze tally using `u64` integers to count votes.
@@ -217,7 +212,6 @@ where
                   C::max_value()
                 }
               }
-              Variant::Losing => *dji,
             };
             p.insert((*i, *j), strength);
           } else {
@@ -332,6 +326,8 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::util;
+  use std::io::Cursor;
 
   #[test]
   fn schulze_basic() {
@@ -343,7 +339,7 @@ mod tests {
     tally.add(&vec!["Abe Vigoda", "Notorious RBG"]);
     tally.add(&vec!["Notorious RBG", "Judge Dredd"]);
 
-    dbg!(tally.totals());
+    assert_eq!(tally.winners().into_unranked()[0], "Notorious RBG");
   }
 
 
@@ -432,21 +428,6 @@ mod tests {
     assert_eq!(ranked, vec![("E", 0), ("A", 1), ("C", 2), ("B", 3), ("D", 4)]);
   }
 
-  #[test]
-  fn schulze_example_4() {
-    // See Example 4: https://arxiv.org/pdf/1804.02973.pdf
-
-    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, vec!["a", "b", "c", "d"]);
-    tally.add_weighted(&vec!["a", "b", "c", "d"], 12);
-    tally.add_weighted(&vec!["a", "d", "b", "c"], 6);
-    tally.add_weighted(&vec!["b", "c", "d", "a"], 9);
-    tally.add_weighted(&vec!["c", "d", "a", "b"], 15);
-    tally.add_weighted(&vec!["d", "b", "a", "c"], 21);
-
-    // Verify ranking - "a" and "b" are tied.
-    let ranked = tally.ranked();
-    assert_eq!(ranked, vec![("d", 0), ("b", 1), ("a", 1), ("c", 2)]);
-  }
 
   #[test]
   fn schulze_favorite_betrayal() {
@@ -489,8 +470,101 @@ mod tests {
   }
 
   #[test]
-  fn schulze_ranked_votes() {
+  fn schulze_example_1() {
+    // See: https://arxiv.org/pdf/1804.02973.pdf (example 1)
+    let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()];
+
+    let votes_raw = "
+    A > C > D > B * 8
+    B > A > D > C * 2
+    C > D > B > A * 4
+    D > B > A > C * 4
+    D > C > B > A * 3
+    ";
+
+    let votes = Cursor::new(votes_raw);
+    let mut votes = util::read_votes(votes).unwrap();
+
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, candidates.clone());
+    for (vote, weight) in votes.drain(..) {
+      let vote = vote.into_ranked();
+      tally.ranked_add_weighted(&vote, weight);
+    }
+
+    assert_eq!(tally.winners().into_unranked()[0], "D".to_string());
+  }
+
+  #[test]
+  fn schulze_example_2() {
+    // See: https://arxiv.org/pdf/1804.02973.pdf (example 2)
+    let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()];
+
+    let votes_raw = "
+    A > C > D > B * 3
+    B > A > C > D * 9
+    C > D > A > B * 8
+    D > A > B > C * 5
+    D > B > C > A * 5
+    ";
+
+    let votes = Cursor::new(votes_raw);
+    let mut votes = util::read_votes(votes).unwrap();
+
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, candidates.clone());
+    for (vote, weight) in votes.drain(..) {
+      let vote = vote.into_ranked();
+      tally.ranked_add_weighted(&vote, weight);
+    }
+
+    assert_eq!(tally.winners().into_unranked()[0], "C".to_string());
+  }
+
+  #[test]
+  fn schulze_example_4() {
+    // See: https://arxiv.org/pdf/1804.02973.pdf (example 4)
+    let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()];
+
+    let votes_raw = "
+    A > B > C > D * 3
+    C > B > D > A * 2
+    D > A > B > C * 2
+    D > B > C > A * 2
+    ";
+
+    let votes = Cursor::new(votes_raw);
+    let mut votes = util::read_votes(votes).unwrap();
+
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, candidates.clone());
+    for (vote, weight) in votes.drain(..) {
+      let vote = vote.into_ranked();
+      tally.ranked_add_weighted(&vote, weight);
+    }
+
+    // Verify winners - "B" and "D" are tied.
+    assert_eq!(tally.winners().into_unranked()[0], "B".to_string());
+    assert_eq!(tally.winners().into_unranked()[1], "D".to_string());
+  }
+
+  #[test]
+  fn schulze_example_5() {
+    // See Example 5: https://arxiv.org/pdf/1804.02973.pdf
+
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, vec!["a", "b", "c", "d"]);
+    tally.add_weighted(&vec!["a", "b", "c", "d"], 12);
+    tally.add_weighted(&vec!["a", "d", "b", "c"], 6);
+    tally.add_weighted(&vec!["b", "c", "d", "a"], 9);
+    tally.add_weighted(&vec!["c", "d", "a", "b"], 15);
+    tally.add_weighted(&vec!["d", "b", "a", "c"], 21);
+
+    // Verify ranking - "a" and "b" are tied.
+    let ranked = tally.ranked();
+    assert_eq!(ranked, vec![("d", 0), ("b", 1), ("a", 1), ("c", 2)]);
+  }
+
+  #[test]
+  fn schulze_example_10() {
     // See: https://github.com/julien-boudry/Condorcet/blob/master/Tests/lib/Algo/Methods/SchulzeTest.php#L219-L252
+    // See: https://arxiv.org/pdf/1804.02973.pdf (Example 10)
 
     use crate::util;
     use std::io::Cursor;
@@ -546,36 +620,5 @@ mod tests {
       }
     }
     assert_eq!(tally.winners().into_unranked()[0], "B".to_string());
-  }
-
-  #[test]
-  fn schulze_official_example_1() {
-    // See: https://arxiv.org/pdf/1804.02973.pdf -  example 1
-    use crate::util;
-    use std::io::Cursor;
-
-    let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()];
-
-    let votes_raw = "
-    A > C > D > B * 8
-    B > A > D > C * 2
-    C > D > B > A * 4
-    D > B > A > C * 4
-    D > C > B > A * 3
-    ";
-
-    let votes = Cursor::new(votes_raw);
-    let votes = util::read_votes(votes).unwrap();
-
-    // Winning
-    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, candidates.clone());
-    for (vote, weight) in votes.iter() {
-      match vote {
-        util::ParsedVote::Ranked(v) => tally.ranked_add_weighted(v, *weight),
-        util::ParsedVote::Unranked(v) => tally.add_weighted(v, *weight),
-      }
-    }
-
-    assert_eq!(tally.winners().into_unranked()[0], "D".to_string());
   }
 }
