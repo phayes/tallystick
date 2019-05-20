@@ -237,18 +237,8 @@ where
               let pik = p.get(&(*i, *k)).unwrap_or(&zero);
               let pjk = p.get(&(*j, *k)).unwrap_or(&zero);
 
-              let min;
-              if pji < pik {
-                min = pji;
-              } else {
-                min = pik;
-              }
-              let max;
-              if pjk > min {
-                max = pjk.clone();
-              } else {
-                max = min.clone();
-              }
+              let min = if pji < pik { pji } else { pik };
+              let max = if pjk > min { *pjk } else { *min };
               p.insert((*j, *k), max);
             }
           }
@@ -331,13 +321,10 @@ where
 
   // Check to make sure that if we are using ratio, we have a bounded and fractional type
   fn check_types(variant: &Variant) {
-    match variant {
-      Variant::Ratio => {
-        if !C::fraction() || C::max_value() == C::zero() {
-          panic!("tallystick::schulze: Variant::Ratio must be used with a type that is bounded and fractional.");
-        }
+    if let Variant::Ratio = variant {
+      if !C::fraction() || C::max_value() == C::zero() {
+        panic!("tallystick::schulze: Variant::Ratio must be used with a type that is bounded and fractional.");
       }
-      _ => {}
     }
   }
 }
