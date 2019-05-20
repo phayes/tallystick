@@ -519,6 +519,34 @@ mod tests {
     assert_eq!(tally.winners().into_unranked()[0], "C".to_string());
   }
 
+    #[test]
+  fn schulze_example_3() {
+    // See: https://arxiv.org/pdf/1804.02973.pdf (example 3)
+    let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string(), "E".to_string()];
+
+    let votes_raw = "
+    A > C > B > E > D * 5
+    A > D > E > C > B * 5
+    B > E > D > A > C * 8
+    C > A > B > E > D * 3
+    C > A > E > B > D * 7
+    C > B > A > D > E * 2
+    D > C > E > B > A * 7
+    E > B > A > D > C * 8
+    ";
+
+    let votes = Cursor::new(votes_raw);
+    let mut votes = util::read_votes(votes).unwrap();
+
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, candidates.clone());
+    for (vote, weight) in votes.drain(..) {
+      let vote = vote.into_ranked();
+      tally.ranked_add_weighted(&vote, weight);
+    }
+
+    assert_eq!(tally.winners().into_unranked()[0], "E".to_string());
+  }
+
   #[test]
   fn schulze_example_4() {
     // See: https://arxiv.org/pdf/1804.02973.pdf (example 4)
@@ -562,12 +590,72 @@ mod tests {
   }
 
   #[test]
+  fn schulze_example_6() {
+    // See: https://arxiv.org/pdf/1804.02973.pdf (example 6)
+    let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()];
+
+    let votes_raw = "
+    A > C > D * 6
+    B > A > D
+    C > B > D * 3
+    D > B > A * 3
+    D > C > B * 2
+    ";
+
+    let votes = Cursor::new(votes_raw);
+    let mut votes = util::read_votes(votes).unwrap();
+
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, candidates.clone());
+    for (vote, weight) in votes.drain(..) {
+      let vote = vote.into_ranked();
+      tally.ranked_add_weighted(&vote, weight);
+    }
+
+    // Verify winners - "A" and "D" are tied.
+    assert_eq!(tally.winners().into_unranked()[0], "A".to_string());
+    assert_eq!(tally.winners().into_unranked()[1], "D".to_string());
+  }
+
+
+    #[test]
+  fn schulze_example_7() {
+    // See: https://arxiv.org/pdf/1804.02973.pdf (example 7)
+    let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string(), "E".to_string(), "F".to_string()];
+
+    let votes_raw = "
+    A > D > E > B > C > F * 3
+    B > F > E > C > D > A * 3
+    C > A > B > F > D > E * 4
+    D > B > C > E > F > A * 1
+    D > E > F > A > B > C * 4
+    E > C > B > D > F > A * 2
+    F > A > C > D > B > E * 2
+    ";
+
+    let votes = Cursor::new(votes_raw);
+    let mut votes = util::read_votes(votes).unwrap();
+
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, candidates.clone());
+    for (vote, weight) in votes.drain(..) {
+      let vote = vote.into_ranked();
+      tally.ranked_add_weighted(&vote, weight);
+    }
+
+    // Verify winners - "A"
+    assert_eq!(tally.winners().into_unranked()[0], "A".to_string());
+
+    // Add additional votes
+    tally.add_weighted(&vec!["A".to_string(), "E".to_string(), "F".to_string(), "C".to_string(), "B".to_string(), "D".to_string()], 2);
+
+    // Verify winners - "D"
+    assert_eq!(tally.winners().into_unranked()[0], "D".to_string());
+  }
+
+
+  #[test]
   fn schulze_example_10() {
     // See: https://github.com/julien-boudry/Condorcet/blob/master/Tests/lib/Algo/Methods/SchulzeTest.php#L219-L252
     // See: https://arxiv.org/pdf/1804.02973.pdf (Example 10)
-
-    use crate::util;
-    use std::io::Cursor;
 
     let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()];
 
@@ -587,7 +675,6 @@ mod tests {
 
     let votes = Cursor::new(votes_raw);
     let votes = util::read_votes(votes).unwrap();
-
 
     // Margin
     let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Margin, candidates.clone());
