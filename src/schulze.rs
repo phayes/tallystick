@@ -44,14 +44,13 @@ pub enum Variant {
 ///    // An election for Judge
 ///
 ///    // TODO: "Abe Vigoda" not implicitly added at the end....
-///    let mut tally = DefaultSchulzeTally::<&str>::new(1, Variant::Winning);
-///    tally.add(vec!["Notorious RBG", "Judge Judy"]);
-///    tally.add(vec!["Judge Dredd"]);
-///    tally.add(vec!["Abe Vigoda", "Notorious RBG"]);
-///    tally.add(vec!["Notorious RBG", "Judge Dredd"]);
+///    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, vec!["Notorious RBG", "Judge Judy", "Abe Vigoda", "Judge Dredd"]);
+///    tally.add(&vec!["Notorious RBG", "Judge Judy"]);
+///    tally.add(&vec!["Judge Dredd"]);
+///    tally.add(&vec!["Abe Vigoda", "Notorious RBG"]);
+///    tally.add(&vec!["Notorious RBG", "Judge Dredd"]);
 ///
 ///    let winners = tally.winners().into_unranked();
-///    dbg!(winners[0]);
 ///    assert!(winners[0] == "Notorious RBG");
 /// ```
 pub type DefaultSchulzeTally<T> = SchulzeTally<T, u64>;
@@ -69,11 +68,12 @@ pub type DefaultSchulzeTally<T> = SchulzeTally<T, u64>;
 ///
 ///    // An election for Judge using floats as the count type.
 ///    let mut tally = SchulzeTally::<&str, f64>::new(1, Variant::Ratio);
-///    tally.add_weighted(vec!["Notorious RBG", "Judge Judy", "Judge Dredd", "Abe Vigoda"], 0.5);
-///    tally.add_weighted(vec!["Judge Dredd", "Abe Vigoda", "Notorious RBG", "Judge Judy"], 2.0);
-///    tally.add_weighted(vec!["Abe Vigoda", "Notorious RBG", "Judge Judy", "Judge Dredd"], 3.2);
-///    tally.add_weighted(vec!["Notorious RBG", "Judge Dredd", "Judge Judy", "Abe Vigoda"], 4.0);
-///    tally.add_weighted(vec!["Judge Judy", "Notorious RBG", "Judge Dredd", "Abe Vigoda"], 0.2);
+///    tally.add_candidates(vec!["Notorious RBG", "Judge Judy", "Abe Vigoda", "Judge Dredd"]);
+///    tally.add_weighted(&vec!["Notorious RBG", "Judge Judy", "Judge Dredd", "Abe Vigoda"], 0.5);
+///    tally.add_weighted(&vec!["Judge Dredd", "Abe Vigoda", "Notorious RBG", "Judge Judy"], 2.0);
+///    tally.add_weighted(&vec!["Abe Vigoda", "Notorious RBG", "Judge Judy", "Judge Dredd"], 3.2);
+///    tally.add_weighted(&vec!["Notorious RBG", "Judge Dredd", "Judge Judy", "Abe Vigoda"], 4.0);
+///    tally.add_weighted(&vec!["Judge Judy", "Notorious RBG", "Judge Dredd", "Abe Vigoda"], 0.2);
 ///
 ///    let winners = tally.winners().into_unranked();
 ///    assert!(winners[0] == "Notorious RBG");
@@ -487,7 +487,7 @@ mod tests {
         util::ParsedVote::Unranked(v) => tally.add_weighted(v, *weight),
       }
     }
-    //assert_eq!(tally.winners().into_unranked()[0], "A".to_string());
+    assert_eq!(tally.winners().into_unranked()[0], "A".to_string());
 
     // Winning
     let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, candidates.clone());
@@ -497,7 +497,7 @@ mod tests {
         util::ParsedVote::Unranked(v) => tally.add_weighted(v, *weight),
       }
     }
-    //assert_eq!(tally.winners().into_unranked()[0], "D".to_string());
+    assert_eq!(tally.winners().into_unranked()[0], "D".to_string());
 
     // Ratio
     let votes = Cursor::new(votes_raw);
@@ -509,7 +509,7 @@ mod tests {
         util::ParsedVote::Unranked(v) => tally.add_weighted(v, *weight),
       }
     }
-    //assert_eq!(tally.winners().into_unranked()[0], "B".to_string());
+    assert_eq!(tally.winners().into_unranked()[0], "B".to_string());
   }
 
   #[test]

@@ -7,6 +7,7 @@
 
 #![warn(rust_2018_idioms)]
 #![warn(missing_docs)]
+
 #![feature(nll)]
 #![feature(specialization)]
 #![feature(crate_visibility_modifier)]

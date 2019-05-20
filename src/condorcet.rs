@@ -1,12 +1,15 @@
 use super::RankedWinners;
 use hashbrown::HashMap;
+
 use num_traits::cast::NumCast;
 use num_traits::Num;
 use petgraph::algo::tarjan_scc;
 use petgraph::graph::NodeIndex;
 use petgraph::Graph;
+use std::convert::TryInto;
 use std::hash::Hash;
 use std::ops::AddAssign;
+
 
 /// A condorcet tally using `u64` integers to count votes.
 /// `DefaultCondorcetTally` is generally preferred over `CondorcetTally`, except when using vote weights that contains fractions.
@@ -21,12 +24,12 @@ use std::ops::AddAssign;
 ///    let red = 0xff0000;
 ///    let blue = 0x00ff00;
 ///    let green = 0x0000ff;
-///    let mut tally = DefaultCondorcetTally::new(1);
-///    tally.add(vec![green, blue, red]);
-///    tally.add(vec![red, green, blue]);
-///    tally.add(vec![blue, green, red]);
-///    tally.add(vec![blue, red, green]);
-///    tally.add(vec![blue, red, green]);
+///    let mut tally = DefaultCondorcetTally::with_candidates(1, vec![red, blue, green]);
+///    tally.add(&vec![green, blue, red]);
+///    tally.add(&vec![red, green, blue]);
+///    tally.add(&vec![blue, green, red]);
+///    tally.add(&vec![blue, red, green]);
+///    tally.add(&vec![blue, red, green]);
 ///
 ///    let winners = tally.winners().into_unranked();
 ///
@@ -47,10 +50,15 @@ pub type DefaultCondorcetTally<T> = CondorcetTally<T, u64>;
 ///
 ///    // A tally with string candidates, one winner, and `f64` counting.
 ///    let mut tally = CondorcetTally::<&str, f64>::new(1);
-///    tally.add(vec!["Alice", "Bob", "Carlos"]);
-///    tally.add(vec!["Bob", "Carlos", "Alice"]);
-///    tally.add(vec!["Alice", "Carlos", "Bob"]);
-///    tally.add(vec!["Alice", "Bob", "Carlos"]);
+///
+///    tally.add_candidate("Alice");
+///    tally.add_candidate("Bob");
+///    tally.add_candidate("Carlos");
+///
+///    tally.add(&vec!["Alice", "Bob", "Carlos"]);
+///    tally.add(&vec!["Bob", "Carlos", "Alice"]);
+///    tally.add(&vec!["Alice", "Carlos", "Bob"]);
+///    tally.add(&vec!["Alice", "Bob", "Carlos"]);
 ///
 ///    let winners = tally.winners();
 /// ```
@@ -120,16 +128,7 @@ where
 
         let selection = self.unranked_mapped_candidates(&vote);
 
-        for (i, candidate) in selection.iter().enumerate() {
-            let mut j = i + 1;
-            while let Some(candidate_2) = selection.get(j) {
-                *self.running_total.entry((*candidate, *candidate_2)).or_insert(C::zero()) += weight;
-                j += 1;
-            }
-        }
-
-        // TODO: Deal with missing candidates...
-        // Probably: unranked_mapped_candidates() gets *all* candidates and returns rank
+        self.add_ranked_candidate_ids(selection, weight);
     }
 
     /// Add a ranked vote by reference.
@@ -151,11 +150,19 @@ where
         // TODO Check duplicates for "unchecked"
 
         let selection = self.ranked_mapped_candidates(&vote);
+
+        self.add_ranked_candidate_ids(selection, weight);
+    }
+
+    fn add_ranked_candidate_ids(&mut self, selection: Vec<(usize, u32)>, weight: C) {
         for (i, (candidate_1, rank_1)) in selection.iter().enumerate() {
             let mut j = i + 1;
             while let Some((candidate_2, rank_2)) = selection.get(j) {
                 if rank_1 < rank_2 {
                     *self.running_total.entry((*candidate_1, *candidate_2)).or_insert(C::zero()) += weight;
+                }
+                if rank_2 < rank_1 {
+                    *self.running_total.entry((*candidate_2, *candidate_1)).or_insert(C::zero()) += weight;
                 }
                 j += 1;
             }
@@ -170,9 +177,9 @@ where
     /// ```
     ///    use tallystick::condorcet::DefaultCondorcetTally;
     ///
-    ///    let mut tally = DefaultCondorcetTally::new(1);
-    ///    for _ in 0..30 { tally.add(vec!["Alice", "Bob"]) }
-    ///    for _ in 0..10 { tally.add(vec!["Bob", "Alice"]) }
+    ///    let mut tally = DefaultCondorcetTally::with_candidates(1, vec!["Alice", "Bob"]);
+    ///    for _ in 0..30 { tally.add(&vec!["Alice", "Bob"]) }
+    ///    for _ in 0..10 { tally.add(&vec!["Bob", "Alice"]) }
     ///
     ///    for ((candidate1, candidate2), num_votes) in tally.totals().iter() {
     ///       println!("{} is preferred over {} {} times", candidate1, candidate2, num_votes);
@@ -207,10 +214,10 @@ where
     /// ```
     ///    use tallystick::condorcet::DefaultCondorcetTally;
     ///
-    ///    let mut tally = DefaultCondorcetTally::new(1);
-    ///    for _ in 0..50 { tally.add(vec!["Alice", "Bob", "Carlos"]); }
-    ///    for _ in 0..40 { tally.add(vec!["Bob", "Carlos", "Alice"]); }
-    ///    for _ in 0..30 { tally.add(vec!["Carlos", "Alice", "Bob"]); }
+    ///    let mut tally = DefaultCondorcetTally::with_candidates(1, vec!["Alice", "Bob", "Carlos"]);
+    ///    for _ in 0..50 { tally.add(&vec!["Alice", "Bob", "Carlos"]); }
+    ///    for _ in 0..40 { tally.add(&vec!["Bob", "Carlos", "Alice"]); }
+    ///    for _ in 0..30 { tally.add(&vec!["Carlos", "Alice", "Bob"]); }
     ///    
     ///    for (candidate, rank) in tally.ranked().iter() {
     ///       println!("{} has a rank of {}", candidate, rank);
@@ -256,10 +263,11 @@ where
     ///    use tallystick::condorcet::DefaultCondorcetTally;
     ///
     ///    let mut tally = DefaultCondorcetTally::new(2); // We ideally want only 2 winnners
-    ///    tally.add_weighted(vec!["Alice"], 3);
-    ///    tally.add_weighted(vec!["Bob", "Carlos", "Alice"], 2);
-    ///    tally.add_weighted(vec!["Carlos", "Alice", "Bob"], 2);
-    ///    tally.add(vec!["Dave"]); // implicit weight of 1
+    ///    tally.add_candidates(vec!["Alice", "Bob", "Carlos", "Dave"]);
+    ///    tally.add_weighted(&vec!["Alice"], 3);
+    ///    tally.add_weighted(&vec!["Bob", "Carlos", "Alice"], 2);
+    ///    tally.add_weighted(&vec!["Carlos", "Alice", "Bob"], 2);
+    ///    tally.add(&vec!["Dave"]); // implicit weight of 1
     ///
     ///    let winners = tally.winners();
     ///
@@ -333,22 +341,39 @@ where
         return self.candidates.iter().map(|(k, _v)| k.clone()).collect();
     }
 
-    // Ensure that candidates are in our list of candidates, and return an internal numeric representation of the same
-    fn unranked_mapped_candidates(&mut self, selection: &[T]) -> Vec<usize> {
-        let mut mapped = Vec::<usize>::new();
-        for selected in selection.iter() {
-            let candidate_id = self.candidates.get(selected).unwrap(); // TODO: Error on missing candidate.
-            mapped.push(*candidate_id);
+    // Return an internal representation of candidates
+    fn unranked_mapped_candidates(&mut self, selection: &[T]) -> Vec<(usize, u32)> {
+        let mut mapped = Vec::<(usize, u32)>::new();
+        for (candidate, candidate_id) in self.candidates.iter() {
+            let index = selection.iter().position(|ref r| *r == candidate);
+            let rank = match index {
+                Some(i) => i,
+                None => selection.len(),
+            };
+            mapped.push((*candidate_id, rank.try_into().unwrap())); // OK to unwrap since we can only have u32 candidates.
         }
         return mapped;
     }
 
-    // Ensure that candidates are in our list of candidates, and return an internal numeric representation of the same
+    // Return an internal representation of candidates
     fn ranked_mapped_candidates(&mut self, selection: &[(T, u32)]) -> Vec<(usize, u32)> {
         let mut mapped = Vec::<(usize, u32)>::new();
-        for (selected, rank) in selection.iter() {
-            let candidate_id = self.candidates.get(selected).unwrap(); // TODO: Error on missing candidate.
-            mapped.push((*candidate_id, *rank));
+        let mut trailing_candidates = Vec::<usize>::new();
+        let mut max_rank = 0;
+        for (candidate, candidate_id) in self.candidates.iter() {
+            let ranked_candidate = selection.iter().find(|ref r| &(r.0) == candidate);
+            match ranked_candidate {
+                Some(rc) => {
+                    max_rank = std::cmp::max(max_rank, rc.1);
+                    mapped.push((*candidate_id, rc.1));
+                }
+                None => trailing_candidates.push(*candidate_id),
+            };
+        }
+
+        // Add all candidates that were not mentioned in the vote as a trailing candidate.
+        for candidate_id in trailing_candidates {
+            mapped.push((candidate_id, max_rank + 1));
         }
         return mapped;
     }

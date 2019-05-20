@@ -1,11 +1,12 @@
 pub use crate::errors::ParseError;
 use num_traits::Num;
-use std::fmt::Debug;
-use std::io::BufReader;
-use std::io::BufRead;
-use std::iter::Iterator;
 use std::convert::TryInto;
 
+use std::io::BufRead;
+use std::io::BufReader;
+
+
+/// A parsed vote, either ranked or unranked.
 #[derive(Debug)]
 pub enum ParsedVote {
   Unranked(Vec<String>),
@@ -28,10 +29,10 @@ impl ParsedVote {
         ranked
       }
     }
-  }  
+  }
 }
 
-pub fn read_votes<T: std::io::Read, C: Num + Debug>(votes: T) -> Result<Vec<(ParsedVote, C)>, ParseError> {
+pub fn read_votes<T: std::io::Read, C: Num>(votes: T) -> Result<Vec<(ParsedVote, C)>, ParseError> {
   let reader = BufReader::new(votes);
 
   let mut res = Vec::new();
@@ -45,7 +46,7 @@ pub fn read_votes<T: std::io::Read, C: Num + Debug>(votes: T) -> Result<Vec<(Par
   return Ok(res);
 }
 
-fn parse_line_into_vote<C: Num + Debug>(line: &str) -> Result<(ParsedVote, C), ParseError> {
+fn parse_line_into_vote<C: Num>(line: &str) -> Result<(ParsedVote, C), ParseError> {
   let parts: Vec<&str> = line.trim().split("*").collect();
 
   let weight;
