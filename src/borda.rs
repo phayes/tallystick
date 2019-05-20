@@ -204,22 +204,22 @@ where
   /// If there is a tie, the number of winners might be more than `num_winners`.
   /// (See [`winners()`](#method.winners) for more information on ties.)
   pub fn new(num_winners: u32, variant: Variant<C>) -> Self {
-    return BordaTally {
+    BordaTally {
       running_total: HashMap::new(),
       candidates: HashSet::new(),
       num_winners: num_winners,
       variant: variant,
-    };
+    }
   }
 
   /// Create a new `BordaTally` with the given number of winners, and number of expected candidates.
   pub fn with_capacity(num_winners: u32, variant: Variant<C>, expected_candidates: usize) -> Self {
-    return BordaTally {
+    BordaTally {
       running_total: HashMap::with_capacity(expected_candidates),
       candidates: HashSet::with_capacity(expected_candidates),
       num_winners: num_winners,
       variant: variant,
-    };
+    }
   }
 
   /// Add a new vote
@@ -276,7 +276,8 @@ where
     for (candidate, votecount) in self.totals().iter() {
       counted.push(candidate.clone(), *votecount);
     }
-    return counted.into_ranked(self.num_winners);
+
+    counted.into_ranked(self.num_winners)
   }
 
   /// Get a ranked list of all candidates. Candidates with the same rank are tied.
@@ -285,7 +286,8 @@ where
     for (candidate, votecount) in self.totals().iter() {
       counted.push(candidate.clone(), *votecount);
     }
-    return counted.into_ranked(0).into_vec();
+
+    counted.into_ranked(0).into_vec()
   }
 
   /// Get point totals for this tally.
@@ -319,13 +321,13 @@ where
       }
     }
 
-    return plurality.totals();
+    plurality.totals()
   }
 
   /// Get a list of all candidates seen by this tally.
   /// Candidates are returned in no particular order.
   pub fn candidates(&self) -> Vec<T> {
-    return self.candidates.iter().map(|x| x.clone()).collect();
+    self.candidates.iter().cloned().collect()
   }
 }
 

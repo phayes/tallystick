@@ -105,10 +105,10 @@ where
   /// This may panic if `Variant::Ratio` is used with an integer count type. (A float count type should be used instead).
   pub fn new(num_winners: u32, variant: Variant) -> Self {
     Self::check_types(&variant);
-    return SchulzeTally {
+    SchulzeTally {
       variant: variant,
       condorcet: CondorcetTally::new(num_winners),
-    };
+    }
   }
 
   /// Create a new `SchulzeTally` with the given number of winners, and number of expected candidates.
@@ -116,10 +116,10 @@ where
   /// This may panic if `Variant::Ratio` is used with an integer count type. (A float count type should be used instead).
   pub fn with_candidates(num_winners: u32, variant: Variant, candidates: Vec<T>) -> Self {
     Self::check_types(&variant);
-    return SchulzeTally {
+    SchulzeTally {
       variant: variant,
       condorcet: CondorcetTally::with_candidates(num_winners, candidates),
-    };
+    }
   }
 
   /// Add a candidate to the tally.
@@ -164,7 +164,7 @@ where
   /// Get a list of all candidates seen by this tally.
   /// Candidates are returned in no particular order.
   pub fn candidates(&self) -> Vec<T> {
-    return self.condorcet.candidates();
+    self.condorcet.candidates()
   }
 
   /// Get total counts for this tally.
@@ -188,7 +188,7 @@ where
   ///    //   Bob is preferred over Alice 10 times
   /// ```
   pub fn totals(&self) -> Vec<((T, T), C)> {
-    return self.condorcet.totals();
+    self.condorcet.totals()
   }
 
   /// Computes the strongest path between all candidates.
@@ -271,7 +271,7 @@ where
       strongest.push(((candidate1, candidate2), *strength));
     }
 
-    return strongest;
+    strongest
   }
 
   crate fn get_counted(&self) -> CountedCandidates<T, C> {
@@ -298,19 +298,19 @@ where
       }
     }
 
-    return running_total.get_counted();
+    running_total.get_counted()
   }
 
   /// Get a ranked list of all candidates. Candidates with the same rank are tied.
   /// Candidates are ranked in ascending order. The highest ranked candidate has a rank of `0`.
   pub fn ranked(&self) -> Vec<(T, u32)> {
-    return self.get_counted().into_ranked(0).into_vec();
+    self.get_counted().into_ranked(0).into_vec()
   }
 
   /// Get a ranked list of winners. Winners with the same rank are tied.
   /// The number of winners might be greater than the requested `num_winners` if there is a tie.
   pub fn winners(&self) -> RankedWinners<T> {
-    return self.get_counted().into_ranked(self.condorcet.num_winners);
+    self.get_counted().into_ranked(self.condorcet.num_winners)
   }
 
   /// Build a graph representing all pairwise competitions between all candidates.
@@ -326,7 +326,7 @@ where
   /// <img src="https://raw.githubusercontent.com/phayes/tallystick/master/docs/pairwise-graph.png" height="320px">
   /// Image Source: [https://arxiv.org/pdf/1804.02973.pdf](https://arxiv.org/pdf/1804.02973.pdf)
   pub fn build_graph(&self) -> Graph<T, (C, C)> {
-    return self.condorcet.build_graph();
+    self.condorcet.build_graph()
   }
 
   // Check to make sure that if we are using ratio, we have a bounded and fractional type

@@ -64,16 +64,16 @@ where
     /// If there is a tie, the number of winners might be more than `num_winners`.
     /// (See [`winners()`](#method.winners) for more information on ties.)
     pub fn new(num_winners: u32) -> Self {
-        return ApprovalTally {
+        ApprovalTally {
             plurality: PluralityTally::new(num_winners),
-        };
+        }
     }
 
     /// Create a new `ApprovalTally` with the given number of winners, and number of expected candidates.
     pub fn with_capacity(num_winners: u32, expected_candidates: usize) -> Self {
-        return ApprovalTally {
+        ApprovalTally {
             plurality: PluralityTally::with_capacity(num_winners, expected_candidates),
-        };
+        }
     }
 
     /// Add a new vote
@@ -108,14 +108,14 @@ where
     /// Get a list of all candidates seen by this tally.
     /// Candidates are returned in no particular order.
     pub fn candidates(&self) -> Vec<T> {
-        return self.plurality.candidates();
+        self.plurality.candidates()
     }
 
     /// Get a ranked list of winners. Winners with the same rank are tied.
     /// The number of winners might be greater than the requested `num_winners` if there is a tie.
     /// In approval voting, the winning candidate(s) is the one most approved by all voters.
     pub fn winners(&self) -> RankedWinners<T> {
-        return self.plurality.winners();
+        self.plurality.winners()
     }
 
     /// Get vote totals for this tally.
@@ -141,7 +141,7 @@ where
     ///    //   Carol got 10 votes
     /// ```
     pub fn totals(&self) -> Vec<(T, C)> {
-        return self.plurality.totals();
+        self.plurality.totals()
     }
 
     /// Get a ranked list of all candidates. Candidates with the same rank are tied.
@@ -164,7 +164,7 @@ where
     ///    //   Carol has a rank of 2
     /// ```
     pub fn ranked(&self) -> Vec<(T, u32)> {
-        return self.plurality.ranked();
+        self.plurality.ranked()
     }
 }
 

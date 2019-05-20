@@ -21,12 +21,12 @@ pub struct RankedWinners<T: Clone> {
 impl<T: Clone + Eq> RankedWinners<T> {
   /// Get the number of winners.
   pub fn len(&self) -> usize {
-    return self.winners.len();
+    self.winners.len()
   }
 
   /// Check if it's empty
   pub fn is_empty(&self) -> bool {
-    return self.winners.is_empty();
+    self.winners.is_empty()
   }
 
   /// Clears the winners, returning all winner-rank pairs as an iterator.
@@ -34,12 +34,12 @@ impl<T: Clone + Eq> RankedWinners<T> {
   where
     R: RangeBounds<usize>,
   {
-    return self.winners.drain(range);
+    self.winners.drain(range)
   }
 
   /// Transform winners into a vector of winner-rank pairs.
   pub fn into_vec(self) -> Vec<RankedWinner<T>> {
-    return self.winners;
+    self.winners
   }
 
   /// Get a list of all winners, without rank.
@@ -48,7 +48,8 @@ impl<T: Clone + Eq> RankedWinners<T> {
     for (winner, _) in self.winners.iter() {
       winners.push(winner.clone());
     }
-    return winners;
+
+    winners
   }
 
   /// Iterate over all winner->rank pairs.
@@ -63,7 +64,8 @@ impl<T: Clone + Eq> RankedWinners<T> {
         return true;
       }
     }
-    return false;
+
+    false
   }
 
   /// Get the rank of a single winner.
@@ -73,7 +75,8 @@ impl<T: Clone + Eq> RankedWinners<T> {
         return Some(*rank);
       }
     }
-    return None;
+
+    None
   }
 
   /// Get an unranked list of all winners, this consumes the winner list.
@@ -82,7 +85,8 @@ impl<T: Clone + Eq> RankedWinners<T> {
     for (winner, _rank) in self.drain(0..) {
       all.push(winner);
     }
-    return all;
+
+    all
   }
 
   /// Check if the actual number of winners is more than the wanted number of winners.
@@ -95,7 +99,7 @@ impl<T: Clone + Eq> RankedWinners<T> {
   /// then there will be an overflow with both candidates being equally ranked to
   /// fill the 3rd seat.
   pub fn check_overflow(&self) -> bool {
-    return self.len() > self.num_winners as usize;
+    self.len() > self.num_winners as usize
   }
 
   /// Get all tied least-significantly ranked winners that overflow the wanted number of winners.
@@ -114,18 +118,18 @@ impl<T: Clone + Eq> RankedWinners<T> {
           overflow.push(candidate.clone());
         }
       }
-      return Some(overflow);
+      Some(overflow)
     } else {
-      return None;
+      None
     }
   }
 
   // New empty list of ranked winners
   pub(crate) fn new(num_winners: u32) -> Self {
-    return RankedWinners {
+    RankedWinners {
       winners: Vec::new(),
       num_winners: num_winners,
-    };
+    }
   }
 
   // Push a new winner onto the end of of the list of winners
@@ -151,7 +155,8 @@ impl<T: Clone + Eq> RankedWinners<T> {
       prev_rank = rank;
     }
     winners.sort();
-    return winners;
+
+    winners
   }
 }
 
@@ -184,7 +189,7 @@ pub(crate) struct CountedCandidates<T: Clone + Eq, C: Copy + Num + PartialOrd>(V
 impl<T: Clone + Eq, C: Copy + Num + PartialOrd> CountedCandidates<T, C> {
   // New empty list of counted candidates
   pub(crate) fn new() -> Self {
-    return CountedCandidates(Vec::new());
+    CountedCandidates(Vec::new())
   }
 
   /// Get the number of winners.
@@ -217,13 +222,13 @@ impl<T: Clone + Eq, C: Copy + Num + PartialOrd> CountedCandidates<T, C> {
       prev = score;
     }
 
-    return ranked;
+    ranked
   }
 
   // Transform into a vector
   pub(crate) fn into_vec(mut self) -> Vec<(T, C)> {
     self.sort();
-    return self.0;
+    self.0
   }
 
   // Push a new winner onto the end of of the list of winners

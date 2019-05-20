@@ -82,11 +82,11 @@ where
     /// If there is a tie, the number of winners might be more than `num_winners`.
     /// (See [`winners()`](#method.winners) for more information on ties.)
     pub fn new(num_winners: u32) -> Self {
-        return CondorcetTally {
+        CondorcetTally {
             running_total: HashMap::new(),
             num_winners: num_winners,
             candidates: HashMap::new(),
-        };
+        }
     }
 
     /// Create a new `CondorcetTally` with the given number of winners, and the provided candidates
@@ -207,7 +207,7 @@ where
             totals.push(((candidate1, candidate2), *count));
         }
 
-        return totals;
+        totals
     }
 
     /// Get a ranked list of all candidates. Candidates with the same rank are tied.
@@ -255,7 +255,7 @@ where
             }
         }
 
-        return ranked;
+        ranked
     }
 
     /// Get a ranked list of winners. Winners with the same rank are tied.
@@ -298,7 +298,7 @@ where
     ///    //   Carlos has a rank of 1
     /// ```
     pub fn winners(&self) -> RankedWinners<T> {
-        return RankedWinners::from_ranked(self.ranked(), self.num_winners);
+        RankedWinners::from_ranked(self.ranked(), self.num_winners)
     }
 
     /// Build a graph representing all pairwise competitions between all candidates.
@@ -335,13 +335,13 @@ where
             }
         }
 
-        return graph;
+        graph
     }
 
     /// Get a list of all candidates seen by this tally.
     /// Candidates are returned in no particular order.
     pub fn candidates(&self) -> Vec<T> {
-        return self.candidates.iter().map(|(k, _v)| k.clone()).collect();
+        self.candidates.iter().map(|(k, _v)| k.clone()).collect()
     }
 
     // Return an internal representation of candidates
@@ -355,7 +355,8 @@ where
             };
             mapped.push((*candidate_id, rank.try_into().unwrap())); // OK to unwrap since we can only have u32 candidates.
         }
-        return mapped;
+
+        mapped
     }
 
     // Return an internal representation of candidates
@@ -378,7 +379,8 @@ where
         for candidate_id in trailing_candidates {
             mapped.push((candidate_id, max_rank + 1));
         }
-        return mapped;
+
+        mapped
     }
 }
 

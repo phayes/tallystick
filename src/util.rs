@@ -37,7 +37,7 @@ impl ParsedVote {
 }
 
 /// Read votes from a reader, parsing them and returning a vector of parsed votes and their weights.
-/// 
+///
 /// TODO: Add Example
 pub fn read_votes<T: std::io::Read, C: Num>(votes: T) -> Result<Vec<(ParsedVote, C)>, ParseError> {
   let reader = BufReader::new(votes);
@@ -45,16 +45,16 @@ pub fn read_votes<T: std::io::Read, C: Num>(votes: T) -> Result<Vec<(ParsedVote,
   let mut res = Vec::new();
   for line in reader.lines() {
     let line = line?;
-    if line.trim().len() > 0 {
+    if !line.trim().is_empty() {
       res.push(parse_line_into_vote(&line)?)
     }
   }
 
-  return Ok(res);
+  Ok(res)
 }
 
 fn parse_line_into_vote<C: Num>(line: &str) -> Result<(ParsedVote, C), ParseError> {
-  let parts: Vec<&str> = line.trim().split("*").collect();
+  let parts: Vec<&str> = line.trim().split('*').collect();
 
   let weight;
   if parts.len() == 1 {
@@ -85,17 +85,17 @@ fn parse_line_into_vote<C: Num>(line: &str) -> Result<(ParsedVote, C), ParseErro
       candidate_buf.push(c);
     }
   }
-  if candidate_buf.trim().len() > 0 {
+  if !candidate_buf.trim().is_empty() {
     vote.push((candidate_buf.trim().to_string(), rank));
   }
 
   if is_ranked {
-    return Ok((ParsedVote::Ranked(vote), weight));
+    Ok((ParsedVote::Ranked(vote), weight))
   } else {
     let mut unranked_vote = Vec::<String>::with_capacity(vote.len());
     for (vote, _rank) in vote.drain(..) {
       unranked_vote.push(vote);
     }
-    return Ok((ParsedVote::Unranked(unranked_vote), weight));
+    Ok((ParsedVote::Unranked(unranked_vote), weight))
   }
 }

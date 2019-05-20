@@ -85,6 +85,7 @@ mod tests {
   use super::*;
 
   #[test]
+  #[allow(clippy::float_cmp)]
   fn quota_test() {
     // Static
     // ------

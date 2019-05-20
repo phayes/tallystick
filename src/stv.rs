@@ -39,21 +39,21 @@ where
     C: Copy + PartialOrd + AddAssign + Num + NumCast, // vote count type
 {
     pub fn new(num_winners: u32, quota: Quota<C>) -> Self {
-        return Tally {
+        Tally {
             running_total: HashMap::new(),
             num_winners: num_winners,
             quota: quota,
             expected_votes: None,
-        };
+        }
     }
 
     pub fn with_capacity(num_winners: u32, quota: Quota<C>, expected_candidates: usize, expected_votes: usize) -> Self {
-        return Tally {
+        Tally {
             running_total: HashMap::with_capacity(expected_candidates),
             num_winners: num_winners,
             quota: quota,
             expected_votes: Some((expected_votes / expected_candidates) * 2),
-        };
+        }
     }
 
     pub fn add(&mut self, mut selection: Vec<T>) {
@@ -88,9 +88,9 @@ where
         }
     }
 
-    pub fn add_ref(&mut self, selection: &Vec<T>) {
+    pub fn add_ref(&mut self, selection: &[T]) {
         // Regretably, we need to store the entire selection, so just clone it
-        self.add(selection.clone());
+        self.add(selection.to_vec().clone());
     }
 
     pub fn winners(&mut self) -> RankedWinners<T> {
@@ -243,14 +243,14 @@ where
             total += candidate_votes.len();
         }
 
-        return total;
+        total
     }
 
     fn threshold(&self) -> C {
         let total_votes = C::from(self.total_votes()).unwrap();
         let num_winners = C::from(self.num_winners).unwrap();
 
-        return self.quota.threshold(total_votes, num_winners);
+        self.quota.threshold(total_votes, num_winners)
     }
 }
 

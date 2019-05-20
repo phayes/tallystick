@@ -67,18 +67,18 @@ where
     /// If there is a tie, the number of winners might be more than `num_winners`.
     /// (See [`winners()`](#method.winners) for more information on ties.)
     pub fn new(num_winners: u32) -> Self {
-        return PluralityTally {
+        PluralityTally {
             running_total: HashMap::new(),
             num_winners: num_winners,
-        };
+        }
     }
 
     /// Create a new `PluralityTally` with the given number of winners, and number of expected candidates.
     pub fn with_capacity(num_winners: u32, expected_candidates: usize) -> Self {
-        return PluralityTally {
+        PluralityTally {
             running_total: HashMap::with_capacity(expected_candidates),
             num_winners: num_winners,
-        };
+        }
     }
 
     /// Add a new vote
@@ -111,7 +111,7 @@ where
     /// Get a list of all candidates seen by this tally.
     /// Candidates are returned in no particular order.
     pub fn candidates(&self) -> Vec<T> {
-        return self.running_total.keys().map(|k| k.clone()).collect();
+        self.running_total.keys().cloned().collect()
     }
 
     /// Get a ranked list of winners. Winners with the same rank are tied.
@@ -141,7 +141,7 @@ where
     ///    //   Cir has a rank of 1
     /// ```
     pub fn winners(&self) -> RankedWinners<T> {
-        return self.get_counted().into_ranked(self.num_winners);
+        self.get_counted().into_ranked(self.num_winners)
     }
 
     /// Get vote totals for this tally.
@@ -162,7 +162,7 @@ where
     ///    //   Bob got 10 votes
     /// ```
     pub fn totals(&self) -> Vec<(T, C)> {
-        return self.get_counted().into_vec();
+        self.get_counted().into_vec()
     }
 
     /// Get a ranked list of all candidates. Candidates with the same rank are tied.
@@ -186,7 +186,7 @@ where
     ///    //   Carlos has a rank of 2
     /// ```
     pub fn ranked(&self) -> Vec<(T, u32)> {
-        return self.get_counted().into_ranked(0).into_vec();
+        self.get_counted().into_ranked(0).into_vec()
     }
 
     // Get the running total as CountedCandidates.
@@ -195,7 +195,8 @@ where
         for (candidate, votecount) in self.running_total.iter() {
             counted.push(candidate.clone(), *votecount);
         }
-        return counted;
+
+        counted
     }
 }
 

@@ -7,6 +7,7 @@
 
 #![warn(rust_2018_idioms)]
 #![warn(missing_docs)]
+#![allow(clippy::redundant_field_names, clippy::cognitive_complexity)]
 
 #![feature(nll)]
 #![feature(specialization)]
