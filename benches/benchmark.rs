@@ -1,6 +1,6 @@
 use tallystick;
 
-use criterion::{Benchmark, Criterion, Throughput, criterion_group, criterion_main};
+use criterion::{criterion_group, criterion_main, Benchmark, Criterion, Throughput};
 use rand::prelude::*;
 use std::cmp::Eq;
 use std::hash::Hash;
@@ -57,17 +57,26 @@ fn condorcet_benchmark(c: &mut Criterion) {
     // 10K from predefined list of candidates and candidate ratios
     c.bench(
         "condorcet",
-        Benchmark::new("static/10K", |b| b.iter(|| condorcet(static_transitive_votes(10_000), 10)))
-            .sample_size(SAMPLE_SIZE)
-            .throughput(Throughput::Elements(10_000)),
+        Benchmark::new("static/10K", |b| {
+            b.iter(|| {
+                condorcet(
+                    static_transitive_votes(10_000),
+                    vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"],
+                )
+            })
+        })
+        .sample_size(SAMPLE_SIZE)
+        .throughput(Throughput::Elements(10_000)),
     );
 
     // 10K from random
     c.bench(
         "condorcet",
-        Benchmark::new("random/10K", |b| b.iter(|| condorcet(random_transitive_votes(10_000), 10)))
-            .sample_size(SAMPLE_SIZE)
-            .throughput(Throughput::Elements(10_000)),
+        Benchmark::new("random/10K", |b| {
+            b.iter(|| condorcet(random_transitive_votes(10_000), (0..10).collect()))
+        })
+        .sample_size(SAMPLE_SIZE)
+        .throughput(Throughput::Elements(10_000)),
     );
 }
 
@@ -90,16 +99,25 @@ fn stv_benchmark(c: &mut Criterion) {
 fn schulze_benchmark(c: &mut Criterion) {
     c.bench(
         "schulze",
-        Benchmark::new("static/10K", |b| b.iter(|| schulze(static_transitive_votes(10_000), 4)))
-            .sample_size(SAMPLE_SIZE)
-            .throughput(Throughput::Elements(10_000)),
+        Benchmark::new("static/10K", |b| {
+            b.iter(|| {
+                schulze(
+                    static_transitive_votes(10_000),
+                    vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"],
+                )
+            })
+        })
+        .sample_size(SAMPLE_SIZE)
+        .throughput(Throughput::Elements(10_000)),
     );
 
     c.bench(
         "schulze",
-        Benchmark::new("random/10K", |b| b.iter(|| schulze(random_transitive_votes(10_000), 10)))
-            .sample_size(SAMPLE_SIZE)
-            .throughput(Throughput::Elements(10_000)),
+        Benchmark::new("random/10K", |b| {
+            b.iter(|| schulze(random_transitive_votes(10_000), (0..10).collect()))
+        })
+        .sample_size(SAMPLE_SIZE)
+        .throughput(Throughput::Elements(10_000)),
     );
 }
 
@@ -120,11 +138,11 @@ fn borda_benchmark(c: &mut Criterion) {
 }
 
 // Build a tally, put votes into the tally, and compute the results.
-fn condorcet<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
-    let mut tally = tallystick::condorcet::DefaultCondorcetTally::with_capacity(1, num_candidates);
+fn condorcet<T: Eq + Clone + Hash>(votes: Vec<Vec<T>>, candidates: Vec<T>) {
+    let mut tally = tallystick::condorcet::DefaultCondorcetTally::with_candidates(1, candidates);
 
-    for vote in votes.drain(0..) {
-        tally.add(vote);
+    for vote in votes {
+        tally.add(&vote);
     }
 
     tally.winners();
@@ -140,11 +158,11 @@ fn stv<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
     tally.winners();
 }
 
-fn schulze<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
-    let mut tally = tallystick::schulze::DefaultSchulzeTally::with_capacity(1, tallystick::schulze::Variant::Winning, num_candidates);
+fn schulze<T: Eq + Clone + Hash>(votes: Vec<Vec<T>>, candidates: Vec<T>) {
+    let mut tally = tallystick::schulze::DefaultSchulzeTally::with_candidates(1, tallystick::schulze::Variant::Winning, candidates);
 
-    for vote in votes.drain(0..) {
-        tally.add(vote);
+    for vote in votes {
+        tally.add(&vote);
     }
 
     tally.winners();

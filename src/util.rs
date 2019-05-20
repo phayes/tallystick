@@ -3,11 +3,32 @@ use num_traits::Num;
 use std::fmt::Debug;
 use std::io::BufReader;
 use std::io::BufRead;
+use std::iter::Iterator;
+use std::convert::TryInto;
 
 #[derive(Debug)]
 pub enum ParsedVote {
   Unranked(Vec<String>),
   Ranked(Vec<(String, u32)>),
+}
+
+impl ParsedVote {
+
+  /// Convert unranked ParsedVote into a ranked parsed vote.
+  /// This is a no-op if the vote is already ranked
+  pub fn into_ranked(self) -> Vec<(String, u32)> {
+    match self {
+      ParsedVote::Ranked(ranked) => ranked,
+      ParsedVote::Unranked(mut unranked) => {
+        let mut ranked = Vec::<(String, u32)>::with_capacity(unranked.len());
+        for (rank, vote) in unranked.drain(..).enumerate() {
+          // Safe to unwrap here since we can't have more than u32::MAX candidates anyways.
+          ranked.push((vote, rank.try_into().unwrap()));
+        }
+        ranked
+      }
+    }
+  }  
 }
 
 pub fn read_votes<T: std::io::Read, C: Num + Debug>(votes: T) -> Result<Vec<(ParsedVote, C)>, ParseError> {

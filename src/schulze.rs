@@ -1,16 +1,14 @@
 use hashbrown::HashMap;
 use num_traits::{Num, NumCast};
 use petgraph::Graph;
-use std::hash::Hash;
-use std::ops::AddAssign;
-
 
 use super::condorcet::CondorcetTally;
 use super::plurality::PluralityTally;
 use super::result::CountedCandidates;
 use super::result::RankedWinners;
 use super::Numeric;
-/// Specifies method used to measure the strength of a link in a set of strongest paths. `Winning` variant is recommended.
+use std::hash::Hash;
+use std::ops::AddAssign;
 pub enum Variant {
   /// Strength of a link is measured by its support. You should use this variant if you are unsure.
   ///
@@ -25,6 +23,7 @@ pub enum Variant {
   /// The strength of a link is measured by the ratio of its support and opposition.
   ///
   /// When the strength of the link `ef` is measured by ratio, then its strength is the ratio `N[e,f] / N[f,e]` between its support `N[e,f]` and its opposition `N[f,e]`.
+  /// TODO: Document panic
   Ratio,
 
   /// The strength of a link is measured by its opposition. Not recommended.
@@ -43,6 +42,8 @@ pub enum Variant {
 ///    use tallystick::schulze::Variant;
 ///
 ///    // An election for Judge
+///
+///    // TODO: "Abe Vigoda" not implicitly added at the end....
 ///    let mut tally = DefaultSchulzeTally::<&str>::new(1, Variant::Winning);
 ///    tally.add(vec!["Notorious RBG", "Judge Judy"]);
 ///    tally.add(vec!["Judge Dredd"]);
@@ -50,6 +51,7 @@ pub enum Variant {
 ///    tally.add(vec!["Notorious RBG", "Judge Dredd"]);
 ///
 ///    let winners = tally.winners().into_unranked();
+///    dbg!(winners[0]);
 ///    assert!(winners[0] == "Notorious RBG");
 /// ```
 pub type DefaultSchulzeTally<T> = SchulzeTally<T, u64>;
@@ -103,49 +105,40 @@ where
   }
 
   /// Create a new `SchulzeTally` with the given number of winners, and number of expected candidates.
-  pub fn with_capacity(num_winners: u32, variant: Variant, expected_candidates: usize) -> Self {
+  pub fn with_candidates(num_winners: u32, variant: Variant, candidates: Vec<T>) -> Self {
     Self::check_types(&variant);
     return SchulzeTally {
       variant: variant,
-      condorcet: CondorcetTally::with_capacity(num_winners, expected_candidates),
+      condorcet: CondorcetTally::with_candidates(num_winners, candidates),
     };
   }
 
-  /// Add a new vote
-  pub fn add(&mut self, selection: Vec<T>) {
+  pub fn add_candidate(&mut self, candidate: T) {
+    self.condorcet.add_candidate(candidate);
+  }
+
+  pub fn add_candidates(&mut self, candidates: Vec<T>) {
+    self.condorcet.add_candidates(candidates);
+  }
+
+  /// Add a vote.
+  pub fn add(&mut self, selection: &[T]) {
     self.condorcet.add(selection);
   }
 
-  /// Add a vote by reference.
-  pub fn add_ref(&mut self, selection: &[T]) {
-    self.condorcet.add_ref(selection);
-  }
-
   /// Add a weighted vote.
+  ///
   /// By default takes a weight as a `usize` integer, but can be customized by using `SchulzeTally` with a custom count type.
-  pub fn add_weighted(&mut self, selection: Vec<T>, weight: C) {
+  pub fn add_weighted(&mut self, selection: &[T], weight: C) {
     self.condorcet.add_weighted(selection, weight);
-  }
-
-  /// Add a weighted vote by reference.
-  pub fn add_weighted_ref(&mut self, selection: &[T], weight: C) {
-    self.condorcet.add_weighted_ref(selection, weight);
   }
 
   /// Add a new ranked vote
   ///
   /// A ranked vote is a list of tuples of (candidate, rank), where rank is ascending.
   /// Two candidates with the same rank are equal in preference.
-  pub fn ranked_add(&mut self, vote: Vec<(T, u32)>) {
+  pub fn ranked_add(&mut self, vote: &[(T, u32)]) {
     self.condorcet.ranked_add(vote);
-  }
-
-  /// Add a ranked vote by reference.
-  ///
-  /// A ranked vote is a list of tuples of (candidate, rank), where rank is ascending.
-  /// Two candidates with the same rank are equal in preference.
-  pub fn ranked_add_ref(&mut self, vote: &[(T, u32)]) {
-    self.condorcet.ranked_add_ref(vote);
   }
 
   /// Add a ranked weighted vote.
@@ -153,16 +146,8 @@ where
   ///
   /// A ranked vote is a list of tuples of (candidate, rank), where rank is ascending.
   /// Two candidates with the same rank are equal in preference.
-  pub fn ranked_add_weighted(&mut self, vote: Vec<(T, u32)>, weight: C) {
+  pub fn ranked_add_weighted(&mut self, vote: &[(T, u32)], weight: C) {
     self.condorcet.ranked_add_weighted(vote, weight);
-  }
-
-  /// Add a new ranked vote with a weight by reference.
-  ///
-  /// A ranked vote is a list of tuples of (candidate, rank), where rank is ascending.
-  /// Two candidates with the same rank are equal in preference.
-  pub fn ranked_add_weighted_ref(&mut self, vote: &[(T, u32)], weight: C) {
-    self.condorcet.ranked_add_weighted_ref(vote, weight);
   }
 
   /// Get a list of all candidates seen by this tally.
@@ -177,50 +162,60 @@ where
 
   pub fn strongest_paths(&self) -> Vec<((T, T), C)> {
     // See: https://en.wikipedia.org/wiki/Schulze_method#Implementations
-
     let zero = C::zero();
     let mut p = HashMap::<(usize, usize), C>::new();
-    for ((i, j), count) in self.condorcet.running_total.iter() {
-      let count_2 = self.condorcet.running_total.get(&(*j, *i)).unwrap_or(&zero);
-      if count > count_2 {
-        let strength = match self.variant {
-          Variant::Winning => *count,
-          Variant::Margin => *count - *count_2,
-          Variant::Ratio => {
-            if count_2 != &zero {
-              *count / *count_2
-            } else {
-              C::max_value()
-            }
+    for i in self.condorcet.candidates.values() {
+      for j in self.condorcet.candidates.values() {
+        if i != j {
+          let dij = self.condorcet.running_total.get(&(*i, *j)).unwrap_or(&zero);
+          let dji = self.condorcet.running_total.get(&(*j, *i)).unwrap_or(&zero);
+
+          if dij > dji {
+            let strength = match self.variant {
+              Variant::Winning => *dij,
+              Variant::Margin => *dij - *dji,
+              Variant::Ratio => {
+                if dji != &zero {
+                  *dij / *dji
+                } else {
+                  C::max_value()
+                }
+              }
+              Variant::Losing => *dji,
+            };
+            p.insert((*i, *j), strength);
+          } else {
+            p.insert((*i, *j), zero);
           }
-          Variant::Losing => *count_2,
-        };
-        p.insert((*i, *j), strength);
-      } else {
-        p.insert((*i, *j), zero);
+        }
       }
     }
 
-    for ((i, j), _) in self.condorcet.running_total.iter() {
-      for k in self.condorcet.candidates.values() {
-        if i != k && j != k {
-          // p[j,k] := max(p[j,k], min(p[j,i], p[i,k]))
-          let pji = p.get(&(*j, *i)).unwrap_or(&zero);
-          let pik = p.get(&(*i, *k)).unwrap_or(&zero);
-          let pjk = p.get(&(*j, *k)).unwrap_or(&zero);
-          let min;
-          if pji < pik {
-            min = pji;
-          } else {
-            min = pik;
+    for i in self.condorcet.candidates.values() {
+      for j in self.condorcet.candidates.values() {
+        if i != j {
+          for k in self.condorcet.candidates.values() {
+            if i != k && j != k {
+              //p[j,k] := max ( p[j,k], min ( p[j,i], p[i,k] ) )
+              let pji = p.get(&(*j, *i)).unwrap_or(&zero);
+              let pik = p.get(&(*i, *k)).unwrap_or(&zero);
+              let pjk = p.get(&(*j, *k)).unwrap_or(&zero);
+
+              let min;
+              if pji < pik {
+                min = pji;
+              } else {
+                min = pik;
+              }
+              let max;
+              if pjk > min {
+                max = pjk.clone();
+              } else {
+                max = min.clone();
+              }
+              p.insert((*j, *k), max);
+            }
           }
-          let max;
-          if pjk > min {
-            max = pjk.clone();
-          } else {
-            max = min.clone();
-          }
-          p.insert((*j, *k), max);
         }
       }
     }
@@ -303,18 +298,32 @@ mod tests {
   use super::*;
 
   #[test]
+  fn schulze_basic() {
+    let mut tally = DefaultSchulzeTally::<&str>::new(1, Variant::Winning);
+    tally.add_candidates(vec!["Notorious RBG", "Judge Judy", "Judge Dredd", "Abe Vigoda"]);
+
+    tally.add(&vec!["Notorious RBG", "Judge Judy"]);
+    tally.add(&vec!["Judge Dredd"]);
+    tally.add(&vec!["Abe Vigoda", "Notorious RBG"]);
+    tally.add(&vec!["Notorious RBG", "Judge Dredd"]);
+
+    dbg!(tally.totals());
+  }
+
+
+  #[test]
   fn schulze_wikipedia() {
     // See: https://en.wikipedia.org/wiki/Schulze_method
 
-    let mut tally = DefaultSchulzeTally::new(1, Variant::Winning);
-    tally.add_weighted(vec!["A", "C", "B", "E", "D"], 5);
-    tally.add_weighted(vec!["A", "D", "E", "C", "B"], 5);
-    tally.add_weighted(vec!["B", "E", "D", "A", "C"], 8);
-    tally.add_weighted(vec!["C", "A", "B", "E", "D"], 3);
-    tally.add_weighted(vec!["C", "A", "E", "B", "D"], 7);
-    tally.add_weighted(vec!["C", "B", "A", "D", "E"], 2);
-    tally.add_weighted(vec!["D", "C", "E", "B", "A"], 7);
-    tally.add_weighted(vec!["E", "B", "A", "D", "C"], 8);
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, vec!["A", "B", "C", "D", "E"]);
+    tally.add_weighted(&vec!["A", "C", "B", "E", "D"], 5);
+    tally.add_weighted(&vec!["A", "D", "E", "C", "B"], 5);
+    tally.add_weighted(&vec!["B", "E", "D", "A", "C"], 8);
+    tally.add_weighted(&vec!["C", "A", "B", "E", "D"], 3);
+    tally.add_weighted(&vec!["C", "A", "E", "B", "D"], 7);
+    tally.add_weighted(&vec!["C", "B", "A", "D", "E"], 2);
+    tally.add_weighted(&vec!["D", "C", "E", "B", "A"], 7);
+    tally.add_weighted(&vec!["E", "B", "A", "D", "C"], 8);
 
     // Verify totals
     let totals = tally.totals();
@@ -391,12 +400,12 @@ mod tests {
   fn schulze_example_4() {
     // See Example 4: https://arxiv.org/pdf/1804.02973.pdf
 
-    let mut tally = DefaultSchulzeTally::new(1, Variant::Winning);
-    tally.add_weighted(vec!["a", "b", "c", "d"], 12);
-    tally.add_weighted(vec!["a", "d", "b", "c"], 6);
-    tally.add_weighted(vec!["b", "c", "d", "a"], 9);
-    tally.add_weighted(vec!["c", "d", "a", "b"], 15);
-    tally.add_weighted(vec!["d", "b", "a", "c"], 21);
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, vec!["a", "b", "c", "d"]);
+    tally.add_weighted(&vec!["a", "b", "c", "d"], 12);
+    tally.add_weighted(&vec!["a", "d", "b", "c"], 6);
+    tally.add_weighted(&vec!["b", "c", "d", "a"], 9);
+    tally.add_weighted(&vec!["c", "d", "a", "b"], 15);
+    tally.add_weighted(&vec!["d", "b", "a", "c"], 21);
 
     // Verify ranking - "a" and "b" are tied.
     let ranked = tally.ranked();
@@ -404,43 +413,42 @@ mod tests {
   }
 
   #[test]
-
   fn schulze_favorite_betrayal() {
     // See: https://rangevoting.org/WinningVotes.html
 
     // Original scenario
-    let mut tally = DefaultSchulzeTally::new(1, Variant::Winning);
-    tally.add_weighted(vec!["B", "C", "A"], 9);
-    tally.add_weighted(vec!["C", "A", "B"], 6);
-    tally.add_weighted(vec!["A", "B", "C"], 5);
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, vec!["A", "B", "C"]);
+    tally.add_weighted(&vec!["B", "C", "A"], 9);
+    tally.add_weighted(&vec!["C", "A", "B"], 6);
+    tally.add_weighted(&vec!["A", "B", "C"], 5);
     assert_eq!(tally.winners().into_unranked()[0], "B");
 
     // Strategic vote change fully-betraying C with winning variant - betrayal works
-    let mut tally = DefaultSchulzeTally::new(1, Variant::Winning);
-    tally.add_weighted(vec!["B", "C", "A"], 9);
-    tally.add_weighted(vec!["A", "C", "B"], 6);
-    tally.add_weighted(vec!["A", "B", "C"], 5);
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, vec!["A", "B", "C"]);
+    tally.add_weighted(&vec!["B", "C", "A"], 9);
+    tally.add_weighted(&vec!["A", "C", "B"], 6);
+    tally.add_weighted(&vec!["A", "B", "C"], 5);
     assert_eq!(tally.winners().into_unranked()[0], "A");
 
     // Strategic vote change fully-betraying C with margin variant - betrayal works
-    let mut tally = DefaultSchulzeTally::new(1, Variant::Margin);
-    tally.add_weighted(vec!["B", "C", "A"], 9);
-    tally.add_weighted(vec!["A", "C", "B"], 6);
-    tally.add_weighted(vec!["A", "B", "C"], 5);
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Margin, vec!["A", "B", "C"]);
+    tally.add_weighted(&vec!["B", "C", "A"], 9);
+    tally.add_weighted(&vec!["A", "C", "B"], 6);
+    tally.add_weighted(&vec!["A", "B", "C"], 5);
     assert_eq!(tally.winners().into_unranked()[0], "A");
 
     // Strategic vote change partly-betraying C with winning - betrayal works
-    let mut tally = DefaultSchulzeTally::new(1, Variant::Winning);
-    tally.add_weighted(vec!["B", "C", "A"], 9);
-    tally.ranked_add_weighted(vec![("A", 0), ("C", 0), ("B", 1)], 6);
-    tally.add_weighted(vec!["A", "B", "C"], 5);
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, vec!["A", "B", "C"]);
+    tally.add_weighted(&vec!["B", "C", "A"], 9);
+    tally.ranked_add_weighted(&vec![("A", 0), ("C", 0), ("B", 1)], 6);
+    tally.add_weighted(&vec!["A", "B", "C"], 5);
     assert_eq!(tally.winners().into_unranked()[0], "A");
 
     // Strategic vote change partly-betraying C with margin - betrayal fails
-    let mut tally = DefaultSchulzeTally::new(1, Variant::Margin);
-    tally.add_weighted(vec!["B", "C", "A"], 9);
-    tally.ranked_add_weighted(vec![("A", 0), ("C", 0), ("B", 1)], 6);
-    tally.add_weighted(vec!["A", "B", "C"], 5);
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Margin, vec!["A", "B", "C"]);
+    tally.add_weighted(&vec!["B", "C", "A"], 9);
+    tally.ranked_add_weighted(&vec![("A", 0), ("C", 0), ("B", 1)], 6);
+    tally.add_weighted(&vec!["A", "B", "C"], 5);
     assert_eq!(tally.winners().into_unranked()[0], "B");
   }
 
@@ -450,6 +458,8 @@ mod tests {
 
     use crate::util;
     use std::io::Cursor;
+
+    let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()];
 
     let votes_raw = "
     A > B > C > D * 6
@@ -468,36 +478,65 @@ mod tests {
     let votes = Cursor::new(votes_raw);
     let votes = util::read_votes(votes).unwrap();
 
-    // Winning
-    let mut tally = DefaultSchulzeTally::new(1, Variant::Winning);
-    for (vote, weight) in votes.iter() {
-      match vote {
-        util::ParsedVote::Ranked(v) => tally.ranked_add_weighted_ref(v, *weight),
-        util::ParsedVote::Unranked(v) => tally.add_weighted_ref(v, *weight),
-      }
-    }
-    // TODO: This test is failing
-    // assert_eq!(tally.winners().into_unranked()[0], "A".to_string());
 
     // Margin
-    let mut tally = DefaultSchulzeTally::new(1, Variant::Margin);
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Margin, candidates.clone());
     for (vote, weight) in votes.iter() {
       match vote {
-        util::ParsedVote::Ranked(v) => tally.ranked_add_weighted_ref(v, *weight),
-        util::ParsedVote::Unranked(v) => tally.add_weighted_ref(v, *weight),
+        util::ParsedVote::Ranked(v) => tally.ranked_add_weighted(v, *weight),
+        util::ParsedVote::Unranked(v) => tally.add_weighted(v, *weight),
       }
     }
-    // TODO: This test is failing
-    // assert_eq!(tally.winners().into_unranked()[0], "B".to_string());
+    //assert_eq!(tally.winners().into_unranked()[0], "A".to_string());
+
+    // Winning
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, candidates.clone());
+    for (vote, weight) in votes.iter() {
+      match vote {
+        util::ParsedVote::Ranked(v) => tally.ranked_add_weighted(v, *weight),
+        util::ParsedVote::Unranked(v) => tally.add_weighted(v, *weight),
+      }
+    }
+    //assert_eq!(tally.winners().into_unranked()[0], "D".to_string());
 
     // Ratio
     let votes = Cursor::new(votes_raw);
     let votes = util::read_votes(votes).unwrap(); // reparse votes as f64
-    let mut tally = SchulzeTally::<_, f64>::new(1, Variant::Ratio);
+    let mut tally = SchulzeTally::<_, f64>::with_candidates(1, Variant::Ratio, candidates.clone());
     for (vote, weight) in votes.iter() {
       match vote {
-        util::ParsedVote::Ranked(v) => tally.ranked_add_weighted_ref(v, *weight),
-        util::ParsedVote::Unranked(v) => tally.add_weighted_ref(v, *weight),
+        util::ParsedVote::Ranked(v) => tally.ranked_add_weighted(v, *weight),
+        util::ParsedVote::Unranked(v) => tally.add_weighted(v, *weight),
+      }
+    }
+    //assert_eq!(tally.winners().into_unranked()[0], "B".to_string());
+  }
+
+  #[test]
+  fn schulze_official_example_1() {
+    // See: https://arxiv.org/pdf/1804.02973.pdf -  example 1
+    use crate::util;
+    use std::io::Cursor;
+
+    let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()];
+
+    let votes_raw = "
+    A > C > D > B * 8
+    B > A > D > C * 2
+    C > D > B > A * 4
+    D > B > A > C * 4
+    D > C > B > A * 3
+    ";
+
+    let votes = Cursor::new(votes_raw);
+    let votes = util::read_votes(votes).unwrap();
+
+    // Winning
+    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, candidates.clone());
+    for (vote, weight) in votes.iter() {
+      match vote {
+        util::ParsedVote::Ranked(v) => tally.ranked_add_weighted(v, *weight),
+        util::ParsedVote::Unranked(v) => tally.add_weighted(v, *weight),
       }
     }
 
