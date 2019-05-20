@@ -9,6 +9,10 @@ use super::result::RankedWinners;
 use super::Numeric;
 use std::hash::Hash;
 use std::ops::AddAssign;
+
+/// Schulze Variants.
+///
+/// Each variant represents a different way to measure the strength of a link.
 pub enum Variant {
   /// Strength of a link is measured by its support. You should use this variant if you are unsure.
   ///
@@ -23,7 +27,8 @@ pub enum Variant {
   /// The strength of a link is measured by the ratio of its support and opposition.
   ///
   /// When the strength of the link `ef` is measured by ratio, then its strength is the ratio `N[e,f] / N[f,e]` between its support `N[e,f]` and its opposition `N[f,e]`.
-  /// TODO: Document panic
+  ///
+  /// If Ratio is selected, tallystick will panic if an integer count type is used in the tally. This variant should only be used with a float tally.
   Ratio,
 
   /// The strength of a link is measured by its opposition. Not recommended.
@@ -96,6 +101,8 @@ where
   ///
   /// If there is a tie, the number of winners might be more than `num_winners`.
   /// (See [`winners()`](#method.winners) for more information on ties.)
+  ///
+  /// This may panic if `Variant::Ratio` is used with an integer count type. (A float count type should be used instead).
   pub fn new(num_winners: u32, variant: Variant) -> Self {
     Self::check_types(&variant);
     return SchulzeTally {
@@ -105,6 +112,8 @@ where
   }
 
   /// Create a new `SchulzeTally` with the given number of winners, and number of expected candidates.
+  ///
+  /// This may panic if `Variant::Ratio` is used with an integer count type. (A float count type should be used instead).
   pub fn with_candidates(num_winners: u32, variant: Variant, candidates: Vec<T>) -> Self {
     Self::check_types(&variant);
     return SchulzeTally {
@@ -113,10 +122,12 @@ where
     };
   }
 
+  /// Add a candidate to the tally.
   pub fn add_candidate(&mut self, candidate: T) {
     self.condorcet.add_candidate(candidate);
   }
 
+  /// Add some candidates to the tally.
   pub fn add_candidates(&mut self, candidates: Vec<T>) {
     self.condorcet.add_candidates(candidates);
   }
@@ -156,12 +167,37 @@ where
     return self.condorcet.candidates();
   }
 
+  /// Get total counts for this tally.
+  /// Totals are returned as a list of pairwise comparisons
+  /// For a pairwise comparison `((T1, T2), C)`, `C` is the number of votes where candidate `T1` is preferred over candidate `T2`.
+  ///
+  /// # Example
+  /// ```
+  ///    use tallystick::schulze::DefaultSchulzeTally;
+  ///    use tallystick::schulze::Variant;
+  ///
+  ///    let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, vec!["Alice", "Bob"]);
+  ///    for _ in 0..30 { tally.add(&vec!["Alice", "Bob"]) }
+  ///    for _ in 0..10 { tally.add(&vec!["Bob", "Alice"]) }
+  ///
+  ///    for ((candidate1, candidate2), num_votes) in tally.totals().iter() {
+  ///       println!("{} is preferred over {} {} times", candidate1, candidate2, num_votes);
+  ///    }
+  ///    // Prints:
+  ///    //   Alice is preferred over Bob 30 times
+  ///    //   Bob is preferred over Alice 10 times
+  /// ```
   pub fn totals(&self) -> Vec<((T, T), C)> {
     return self.condorcet.totals();
   }
 
+  /// Computes the strongest path between all candidates.
+  ///
+  /// This is a well-known problem in graph theory sometimes called the widest path problem.
+  /// This function uses a variant of the Floyd–Warshall algorithm.
+  ///
+  /// See: [https://en.wikipedia.org/wiki/Schulze_method#Implementations](https://en.wikipedia.org/wiki/Schulze_method#Implementations)
   pub fn strongest_paths(&self) -> Vec<((T, T), C)> {
-    // See: https://en.wikipedia.org/wiki/Schulze_method#Implementations
     let zero = C::zero();
     let mut p = HashMap::<(usize, usize), C>::new();
     for i in self.condorcet.candidates.values() {
@@ -265,17 +301,30 @@ where
     return running_total.get_counted();
   }
 
+  /// Get a ranked list of all candidates. Candidates with the same rank are tied.
+  /// Candidates are ranked in ascending order. The highest ranked candidate has a rank of `0`.
   pub fn ranked(&self) -> Vec<(T, u32)> {
     return self.get_counted().into_ranked(0).into_vec();
   }
 
   /// Get a ranked list of winners. Winners with the same rank are tied.
   /// The number of winners might be greater than the requested `num_winners` if there is a tie.
-  /// In approval voting, the winning candidate(s) is the one most approved by all voters.
   pub fn winners(&self) -> RankedWinners<T> {
     return self.get_counted().into_ranked(self.condorcet.num_winners);
   }
 
+  /// Build a graph representing all pairwise competitions between all candidates.
+  ///
+  /// Each candidate is assigned a node, vertexes between nodes contain a tuple of counts.
+  /// Vertexes are directional, leading from the more preferred candidate to the less prefered candidate.
+  /// The first element of tuple is the number votes where the first candidate is prefered to the second.
+  /// The second element of the tuple is the number of votes where the second candidate is prefered to the first.
+  /// The first element in the tuple is always greater than or equal to the second element in the tuple.
+  ///
+  /// If both candidates are equally prefered, two vertexes are created, one going in each direction.
+  ///
+  /// <img src="https://raw.githubusercontent.com/phayes/tallystick/master/docs/pairwise-graph.png" height="320px">
+  /// Image Source: [https://arxiv.org/pdf/1804.02973.pdf](https://arxiv.org/pdf/1804.02973.pdf)
   pub fn build_graph(&self) -> Graph<T, (C, C)> {
     return self.condorcet.build_graph();
   }

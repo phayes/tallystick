@@ -89,7 +89,7 @@ where
         };
     }
 
-    /// Create a new `CondorcetTally` with the given number of winners, and number of expected candidates.
+    /// Create a new `CondorcetTally` with the given number of winners, and the provided candidates
     pub fn with_candidates(num_winners: u32, candidates: Vec<T>) -> Self {
         let mut tally = CondorcetTally {
             running_total: HashMap::with_capacity(candidates.len() ^ 2),
@@ -100,23 +100,25 @@ where
         tally
     }
 
+    /// Add a candidate to the tally.
     pub fn add_candidate(&mut self, candidate: T) {
         let candidate_id = self.candidates.len();
         self.candidates.insert(candidate, candidate_id);
     }
 
+    /// Add some candidates to the tally.
     pub fn add_candidates(&mut self, mut candidates: Vec<T>) {
         for candidate in candidates.drain(..) {
             self.add_candidate(candidate)
         }
     }
 
-    /// Add a vote by reference.
+    /// Add a vote.
     pub fn add(&mut self, vote: &[T]) {
         self.add_weighted(vote, C::one())
     }
 
-    /// Add a weighted vote by reference.
+    /// Add a weighted vote.
     pub fn add_weighted(&mut self, vote: &[T], weight: C) {
         if vote.is_empty() {
             return;
@@ -131,7 +133,7 @@ where
         self.add_ranked_candidate_ids(selection, weight);
     }
 
-    /// Add a ranked vote by reference.
+    /// Add a ranked vote.
     ///
     /// A ranked vote is a list of tuples of (candidate, rank), where rank is ascending.
     /// Two candidates with the same rank are equal in preference.
@@ -139,7 +141,7 @@ where
         self.ranked_add_weighted(vote, C::one())
     }
 
-    /// Add a new ranked vote with a weight.
+    /// Add a ranked vote with a weight.
     ///
     /// A ranked vote is a list of tuples of (candidate, rank), where rank is ascending.
     /// Two candidates with the same rank are equal in preference.
@@ -154,6 +156,7 @@ where
         self.add_ranked_candidate_ids(selection, weight);
     }
 
+    // Internal function that takes a ranked list of candidate-ids and adds them to the tally.
     fn add_ranked_candidate_ids(&mut self, selection: Vec<(usize, u32)>, weight: C) {
         for (i, (candidate_1, rank_1)) in selection.iter().enumerate() {
             let mut j = i + 1;

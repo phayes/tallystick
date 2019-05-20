@@ -9,7 +9,11 @@ use std::io::BufReader;
 /// A parsed vote, either ranked or unranked.
 #[derive(Debug)]
 pub enum ParsedVote {
+
+  /// An unranked vote. Candidates are returned in preferential order, with the most significant selection first.
   Unranked(Vec<String>),
+
+  /// A ranked vote as (candidate, rank) pairs. Ranks are ordered ascending, so that the most significant rank is rank 0.
   Ranked(Vec<(String, u32)>),
 }
 
@@ -32,6 +36,9 @@ impl ParsedVote {
   }
 }
 
+/// Read votes from a reader, parsing them and returning a vector of parsed votes and their weights.
+/// 
+/// TODO: Add Example
 pub fn read_votes<T: std::io::Read, C: Num>(votes: T) -> Result<Vec<(ParsedVote, C)>, ParseError> {
   let reader = BufReader::new(votes);
 
