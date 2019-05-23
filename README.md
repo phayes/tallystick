@@ -20,7 +20,7 @@ _Current state is very unstable. It is not currently recommended for use. See ch
 
 - [ ] `wasm` support for use in the browser, or in blockchain smart contracts.
 - [ ] `rational` support for perfectly-precise tallies by using rational fractions instead of floats.
-- [ ] `fixed_point` support for decimal fixed-point tallies, required by some statues.
+- [ ] `fixed_point` support for decimal fixed-point tallies, required by some statutes.
 - [ ] `ffi` support for calling from other programming languages.
 - [ ] `alloc` support for embedded and other applications where there is an allocator, but no standard library.
 
