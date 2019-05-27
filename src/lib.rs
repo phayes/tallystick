@@ -8,7 +8,6 @@
 #![warn(rust_2018_idioms)]
 #![warn(missing_docs)]
 #![allow(clippy::redundant_field_names, clippy::cognitive_complexity)]
-
 #![feature(nll)]
 #![feature(specialization)]
 #![feature(crate_visibility_modifier)]
@@ -110,10 +109,10 @@ pub use crate::errors::TallyError;
 // Check if a vector has a duplicate
 // This is critical for transitive (ranked) votes
 pub(crate) fn check_duplicate<T: PartialEq>(slice: &[T]) -> Result<(), TallyError> {
-  for i in 1..slice.len() {
-    if slice[i..].contains(&slice[i - 1]) {
-      return Err(TallyError::VoteHasDuplicateCandidates);
+    for i in 1..slice.len() {
+        if slice[i..].contains(&slice[i - 1]) {
+            return Err(TallyError::VoteHasDuplicateCandidates);
+        }
     }
-  }
-  Ok(())
+    Ok(())
 }

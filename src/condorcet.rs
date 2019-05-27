@@ -1,4 +1,3 @@
-
 use super::errors::TallyError;
 use super::RankedWinners;
 
@@ -11,7 +10,6 @@ use petgraph::Graph;
 use std::convert::TryInto;
 use std::hash::Hash;
 use std::ops::AddAssign;
-
 
 /// A condorcet tally using `u64` integers to count votes.
 /// `DefaultCondorcetTally` is generally preferred over `CondorcetTally`, except when using vote weights that contains fractions.
@@ -355,7 +353,6 @@ where
     pub fn candidates(&self) -> Vec<T> {
         self.candidates.iter().map(|(k, _v)| k.clone()).collect()
     }
-
 
     /// Check the validity of a vote
     ///
