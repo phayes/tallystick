@@ -191,8 +191,8 @@ where
     ///    use tallystick::condorcet::DefaultCondorcetTally;
     ///
     ///    let mut tally = DefaultCondorcetTally::with_candidates(1, vec!["Alice", "Bob"]);
-    ///    for _ in 0..30 { tally.add(&vec!["Alice", "Bob"]) }
-    ///    for _ in 0..10 { tally.add(&vec!["Bob", "Alice"]) }
+    ///    for _ in 0..30 { tally.add(&vec!["Alice", "Bob"]); }
+    ///    for _ in 0..10 { tally.add(&vec!["Bob", "Alice"]); }
     ///
     ///    for ((candidate1, candidate2), num_votes) in tally.totals().iter() {
     ///       println!("{} is preferred over {} {} times", candidate1, candidate2, num_votes);
