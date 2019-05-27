@@ -1,4 +1,5 @@
 pub use crate::errors::ParseError;
+use crate::errors::TallyError;
 use num_traits::Num;
 use std::convert::TryInto;
 
@@ -99,3 +100,29 @@ fn parse_line_into_vote<C: Num>(line: &str) -> Result<(ParsedVote, C), ParseErro
     Ok((ParsedVote::Unranked(unranked_vote), weight))
   }
 }
+
+    /// Check for duplicates in a transitive vote.
+    pub fn check_duplicates_transitive_vote<T: Eq>(vote: &[T]) -> Result<(), TallyError> {
+        for (i, candidate) in vote.iter().enumerate() {
+            for j in i+1..vote.len() {
+                if &vote[j] == candidate {
+                    return Err(TallyError::VoteHasDuplicateCandidates);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Check for duplicates in a ranked vote.
+    pub fn check_duplicates_ranked_vote<T: Eq>(vote: &[(T, u32)]) -> Result<(), TallyError> {
+        for (i, (candidate, _rank)) in vote.iter().enumerate() {
+            for j in i+1..vote.len() {
+                if &vote[j].0 == candidate {
+                    return Err(TallyError::VoteHasDuplicateCandidates);
+                }
+            }
+        }
+
+        Ok(())
+    }

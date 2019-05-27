@@ -1,6 +1,8 @@
-use super::RankedWinners;
-use hashbrown::HashMap;
 
+use super::errors::TallyError;
+use super::RankedWinners;
+
+use hashbrown::HashMap;
 use num_traits::cast::NumCast;
 use num_traits::Num;
 use petgraph::algo::tarjan_scc;
@@ -70,6 +72,7 @@ where
     crate running_total: HashMap<(usize, usize), C>,
     crate num_winners: u32,
     crate candidates: HashMap<T, usize>, // Map candiates to a unique integer identifiers
+    check_votes: bool,
 }
 
 impl<T, C> CondorcetTally<T, C>
@@ -86,6 +89,7 @@ where
             running_total: HashMap::new(),
             num_winners: num_winners,
             candidates: HashMap::new(),
+            check_votes: true,
         }
     }
 
@@ -95,9 +99,18 @@ where
             running_total: HashMap::with_capacity(candidates.len() ^ 2),
             num_winners: num_winners,
             candidates: HashMap::with_capacity(candidates.len()),
+            check_votes: true,
         };
         tally.add_candidates(candidates);
         tally
+    }
+
+    /// Make this tally an unchecked tally, forgoing vote validity checking
+    ///
+    /// When using an unchecked tally, all vote adding methods will return Ok(), so you may elide checking for errors.
+    pub fn unchecked(mut self) -> Self {
+        self.check_votes = false;
+        self
     }
 
     /// Add a candidate to the tally.
@@ -114,30 +127,28 @@ where
     }
 
     /// Add a vote.
-    pub fn add(&mut self, vote: &[T]) {
+    pub fn add(&mut self, vote: &[T]) -> Result<(), TallyError> {
         self.add_weighted(vote, C::one())
     }
 
     /// Add a weighted vote.
-    pub fn add_weighted(&mut self, vote: &[T], weight: C) {
-        if vote.is_empty() {
-            return;
+    pub fn add_weighted(&mut self, vote: &[T], weight: C) -> Result<(), TallyError> {
+        if self.check_votes {
+            self.check_vote(vote)?;
         }
-
-        // TODO: make this an optional checked / unchecked
-        // TODO: Make it part of the constructor.
-        //check_duplicate(vote)?;
 
         let selection = self.unranked_mapped_candidates(&vote);
 
         self.add_ranked_candidate_ids(selection, weight);
+
+        Ok(())
     }
 
     /// Add a ranked vote.
     ///
     /// A ranked vote is a list of tuples of (candidate, rank), where rank is ascending.
     /// Two candidates with the same rank are equal in preference.
-    pub fn ranked_add(&mut self, vote: &[(T, u32)]) {
+    pub fn ranked_add(&mut self, vote: &[(T, u32)]) -> Result<(), TallyError> {
         self.ranked_add_weighted(vote, C::one())
     }
 
@@ -145,15 +156,16 @@ where
     ///
     /// A ranked vote is a list of tuples of (candidate, rank), where rank is ascending.
     /// Two candidates with the same rank are equal in preference.
-    pub fn ranked_add_weighted(&mut self, vote: &[(T, u32)], weight: C) {
-        if vote.is_empty() {
-            return;
+    pub fn ranked_add_weighted(&mut self, vote: &[(T, u32)], weight: C) -> Result<(), TallyError> {
+        if self.check_votes {
+            self.check_ranked_vote(vote)?;
         }
-        // TODO Check duplicates for "unchecked"
 
         let selection = self.ranked_mapped_candidates(&vote);
 
         self.add_ranked_candidate_ids(selection, weight);
+
+        Ok(())
     }
 
     // Internal function that takes a ranked list of candidate-ids and adds them to the tally.
@@ -344,6 +356,37 @@ where
         self.candidates.iter().map(|(k, _v)| k.clone()).collect()
     }
 
+
+    /// Check the validity of a vote
+    ///
+    /// This will ensure all candidates are valid, and there are no duplicate candidates.
+    pub fn check_vote(&self, vote: &[T]) -> Result<(), TallyError> {
+        // Check to make sure all candidates exists
+        for candidate in vote {
+            if self.candidates.get(candidate).is_none() {
+                return Err(TallyError::UnknownCandidate);
+            }
+        }
+        crate::util::check_duplicates_transitive_vote(vote)?;
+
+        Ok(())
+    }
+
+    /// Check the validity of a ranked vote
+    ///
+    /// This will ensure all candidates are valid, and there are no duplicate candidates.
+    pub fn check_ranked_vote(&self, vote: &[(T, u32)]) -> Result<(), TallyError> {
+        // Check to make sure all candidates exists
+        for (candidate, _rank) in vote {
+            if self.candidates.get(candidate).is_none() {
+                return Err(TallyError::UnknownCandidate);
+            }
+        }
+        crate::util::check_duplicates_ranked_vote(vote)?;
+
+        Ok(())
+    }
+
     // Return an internal representation of candidates
     fn unranked_mapped_candidates(&mut self, selection: &[T]) -> Vec<(usize, u32)> {
         let mut mapped = Vec::<(usize, u32)>::new();
@@ -392,12 +435,12 @@ mod tests {
     use std::iter::FromIterator;
 
     #[test]
-    fn condorcet_basic() {
+    fn condorcet_basic() -> Result<(), TallyError> {
         // Election between Alice, Bob, and Carol
         let mut tally = DefaultCondorcetTally::with_candidates(2, vec!["Alice", "Bob", "Carol"]);
-        tally.add(&vec!["Alice", "Bob", "Carol"]);
-        tally.add(&vec!["Alice", "Bob", "Carol"]);
-        tally.add(&vec!["Alice", "Bob", "Carol"]);
+        tally.add(&vec!["Alice", "Bob", "Carol"])?;
+        tally.add(&vec!["Alice", "Bob", "Carol"])?;
+        tally.add(&vec!["Alice", "Bob", "Carol"])?;
 
         let totals = tally.totals();
         let totals = HashSet::from_iter(totals.iter().cloned()); // As a hashset.
@@ -411,9 +454,9 @@ mod tests {
 
         // Test a non-transitive voting paradox
         let mut tally = DefaultCondorcetTally::with_candidates(2, vec!["Alice", "Bob", "Carol"]);
-        tally.add(&vec!["Alice", "Bob", "Carol"]);
-        tally.add(&vec!["Bob", "Carol", "Alice"]);
-        tally.add(&vec!["Carol", "Alice", "Bob"]);
+        tally.add(&vec!["Alice", "Bob", "Carol"])?;
+        tally.add(&vec!["Bob", "Carol", "Alice"])?;
+        tally.add(&vec!["Carol", "Alice", "Bob"])?;
 
         let winners = tally.winners();
         assert_eq!(winners.is_empty(), false);
@@ -423,16 +466,18 @@ mod tests {
         assert_eq!(winners.rank(&"Alice").unwrap(), 0);
         assert_eq!(winners.rank(&"Bob").unwrap(), 0);
         assert_eq!(winners.rank(&"Carol").unwrap(), 0);
+
+        Ok(())
     }
 
     #[test]
-    fn condorcet_wikipedia() {
+    fn condorcet_wikipedia() -> Result<(), TallyError> {
         // From: https://en.wikipedia.org/wiki/Condorcet_method
         let mut tally = DefaultCondorcetTally::with_candidates(4, vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"]);
-        tally.add_weighted(&vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"], 42);
-        tally.add_weighted(&vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"], 26);
-        tally.add_weighted(&vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"], 15);
-        tally.add_weighted(&vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"], 17);
+        tally.add_weighted(&vec!["Memphis", "Nashville", "Chattanooga", "Knoxville"], 42)?;
+        tally.add_weighted(&vec!["Nashville", "Chattanooga", "Knoxville", "Memphis"], 26)?;
+        tally.add_weighted(&vec!["Chattanooga", "Knoxville", "Nashville", "Memphis"], 15)?;
+        tally.add_weighted(&vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"], 17)?;
 
         let candidates = tally.candidates();
         let candidates = HashSet::from_iter(candidates.iter().cloned()); // As a hashset
@@ -463,19 +508,21 @@ mod tests {
             winners.into_vec(),
             vec! {("Nashville", 0), ("Chattanooga", 1), ("Knoxville", 2), ("Memphis", 3)}
         );
+
+        Ok(())
     }
 
     #[test]
-    fn condorcet_graph() {
+    fn condorcet_graph() -> Result<(), TallyError> {
         // From: https://arxiv.org/pdf/1804.02973.pdf
 
         // Example 1:
         let mut tally = DefaultCondorcetTally::with_candidates(1, vec!["a", "b", "c", "d"]);
-        tally.add_weighted(&vec!["a", "c", "d", "b"], 8);
-        tally.add_weighted(&vec!["b", "a", "d", "c"], 2);
-        tally.add_weighted(&vec!["c", "d", "b", "a"], 4);
-        tally.add_weighted(&vec!["d", "b", "a", "c"], 4);
-        tally.add_weighted(&vec!["d", "c", "b", "a"], 3);
+        tally.add_weighted(&vec!["a", "c", "d", "b"], 8)?;
+        tally.add_weighted(&vec!["b", "a", "d", "c"], 2)?;
+        tally.add_weighted(&vec!["c", "d", "b", "a"], 4)?;
+        tally.add_weighted(&vec!["d", "b", "a", "c"], 4)?;
+        tally.add_weighted(&vec!["d", "c", "b", "a"], 3)?;
 
         let graph = tally.build_graph();
         assert_eq!(graph.node_count(), 4);
@@ -493,5 +540,7 @@ mod tests {
                 }
             }
         }
+
+        Ok(())
     }
 }
