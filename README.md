@@ -3,6 +3,8 @@
 [![Build Status](https://travis-ci.org/phayes/tallystick.svg?branch=master)](https://travis-ci.org/phayes/tallystick)
 [![codecov](https://codecov.io/gh/phayes/tallystick/branch/master/graph/badge.svg)](https://codecov.io/gh/phayes/tallystick)
 [![patreon](https://img.shields.io/badge/patreon-donate-green.svg)](https://patreon.com/phayes)
+[![flattr](https://img.shields.io/badge/flattr-donate-green.svg)](https://flattr.com/@phayes)
+
 
 tallystick is a work-in-progress rust library for tallying votes.
 
