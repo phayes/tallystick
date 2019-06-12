@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/phayes/tallystick.svg?branch=master)](https://travis-ci.org/phayes/tallystick)
 [![codecov](https://codecov.io/gh/phayes/tallystick/branch/master/graph/badge.svg)](https://codecov.io/gh/phayes/tallystick)
+[![patreon](https://img.shields.io/badge/patreon-donate-green.svg)](https://patreon.com/phayes)
 
 tallystick is a work-in-progress rust library for tallying votes.
 
@@ -55,5 +56,5 @@ _Current state is very unstable. It is not currently recommended for use. See ch
 
 ## Contributors
 
-- Patrick Hayes ([phayes](https://github.com/phayes))
-- Kurtis Jensen ([kbuilds](https://github.com/kbuilds))
+-Patrick Hayes ([linkedin](https://www.linkedin.com/in/patrickdhayes/)) ([github](https://github.com/phayes)) - Available for hire.
+- Kurtis Jensen ([github](https://github.com/kbuilds))
