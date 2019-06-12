@@ -56,5 +56,5 @@ _Current state is very unstable. It is not currently recommended for use. See ch
 
 ## Contributors
 
--Patrick Hayes ([linkedin](https://www.linkedin.com/in/patrickdhayes/)) ([github](https://github.com/phayes)) - Available for hire.
+- Patrick Hayes ([linkedin](https://www.linkedin.com/in/patrickdhayes/)) ([github](https://github.com/phayes)) - Available for hire.
 - Kurtis Jensen ([github](https://github.com/kbuilds))
