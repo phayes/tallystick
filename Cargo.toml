@@ -23,17 +23,17 @@ default = []
 rational = ["num-rational"]
 
 [dependencies]
-failure = "0.1.5"
+failure = "0.1.6"
 petgraph = {default-features = false, version = "0.5.0"}
-derive_more = "0.14.0"
-num-traits = "0.2.6"
-num-rational = {optional = true, version = "0.2.1"}
+derive_more = "0.99.2"
+num-traits = "0.2.11"
+num-rational = {optional = true, version = "0.2.3"}
 hashbrown = "0.6.3"
 
 [dev-dependencies]
 criterion = "0.2"
 rand = "0.7.3"
-maplit = "1.0.1"
+maplit = "1.0.2"
 
 [[bench]]
 name = "benchmark"
