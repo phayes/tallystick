@@ -4,10 +4,10 @@ use super::result::CountedCandidates;
 use super::result::RankedWinners;
 use super::Numeric;
 use super::TallyError;
-use hashbrown::HashMap;
-use hashbrown::HashSet;
 use num_traits::Num;
 use num_traits::NumCast;
+use std::collections::HashMap;
+use std::collections::HashSet;
 use std::hash::Hash;
 use std::ops::AddAssign;
 
@@ -392,13 +392,16 @@ mod tests {
         dowdall_tally.add_weighted(vec!["Brian", "Catherine", "David", "Andrew"], 23.0)?;
         dowdall_tally.add_weighted(vec!["David", "Catherine", "Brian", "Andrew"], 21.0)?;
 
+        // TODO: This could fail sometimes due to a bug in Rust: https://github.com/rust-lang/rust/issues/62175
+        // Test with fixed-point numbers?
+        let totals = dowdall_tally.totals();
         assert!(
-            dowdall_tally.totals()
+            totals
                 == vec![
                     ("Andrew", 63.25),
                     ("Catherine", 52.5),
                     ("Brian", 49.5),
-                    ("David", 43.08 + (0.01 / 3.0))
+                    ("David", 43.08333333333333)
                 ]
         );
         assert!(dowdall_tally.winners().into_unranked() == vec!["Andrew"]);
@@ -416,8 +419,11 @@ mod tests {
         tally.add(vec!["Alice", "Bob", "Carlos"])?;
         tally.add(vec!["Alice", "Bob"])?;
         tally.add(vec!["Bob", "Carlos"])?;
-        assert!(tally.totals() == vec![("Alice", 5), ("Bob", 5), ("Carlos", 2)]);
-        assert!(tally.ranked() == vec![("Alice", 0), ("Bob", 0), ("Carlos", 1)]);
+
+        let totals = tally.totals();
+        assert!(totals == vec![("Alice", 5), ("Bob", 5), ("Carlos", 2)] || totals == vec![("Bob", 5), ("Alice", 5), ("Carlos", 2)]);
+        let ranked = tally.ranked();
+        assert!(ranked == vec![("Alice", 0), ("Bob", 0), ("Carlos", 1)] || ranked == vec![("Bob", 0), ("Alice", 0), ("Carlos", 1)]);
         assert!(tally.candidates().len() == 3);
 
         // Testing custom - just assign every candidate a "1" turning this borda into appproval voting.
@@ -426,8 +432,10 @@ mod tests {
         tally.add(vec!["Alice", "Bob", "Carlos"])?;
         tally.add(vec!["Alice", "Bob"])?;
         tally.add(vec!["Bob", "Carlos"])?;
-        assert!(tally.totals() == vec![("Bob", 3), ("Alice", 2), ("Carlos", 2)]);
-        assert!(tally.ranked() == vec![("Bob", 0), ("Alice", 1), ("Carlos", 1)]);
+        let totals = tally.totals();
+        assert!(totals == vec![("Bob", 3), ("Alice", 2), ("Carlos", 2)] || totals == vec![("Bob", 3), ("Carlos", 2), ("Alice", 2)]);
+        let ranked = tally.ranked();
+        assert!(ranked == vec![("Bob", 0), ("Alice", 1), ("Carlos", 1)] || ranked == vec![("Bob", 0), ("Carlos", 1), ("Alice", 1)]);
         assert!(tally.candidates().len() == 3);
 
         // Testin adding ref

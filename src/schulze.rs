@@ -1,13 +1,13 @@
-use hashbrown::HashMap;
 use num_traits::{Num, NumCast};
 use petgraph::Graph;
+use std::collections::HashMap;
 
 use super::condorcet::CondorcetTally;
+use super::errors::TallyError;
 use super::plurality::PluralityTally;
 use super::result::CountedCandidates;
 use super::result::RankedWinners;
 use super::Numeric;
-use super::errors::TallyError;
 use std::hash::Hash;
 use std::ops::AddAssign;
 
@@ -354,7 +354,7 @@ mod tests {
     }
 
     #[test]
-    fn schulze_wikipedia() -> Result<(), TallyError>  {
+    fn schulze_wikipedia() -> Result<(), TallyError> {
         // See: https://en.wikipedia.org/wiki/Schulze_method
 
         let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, vec!["A", "B", "C", "D", "E"]);
@@ -441,7 +441,7 @@ mod tests {
     }
 
     #[test]
-    fn schulze_favorite_betrayal()  -> Result<(), TallyError> {
+    fn schulze_favorite_betrayal() -> Result<(), TallyError> {
         // See: https://rangevoting.org/WinningVotes.html
 
         // Original scenario
@@ -483,7 +483,7 @@ mod tests {
     }
 
     #[test]
-    fn schulze_example_1()  -> Result<(), TallyError> {
+    fn schulze_example_1() -> Result<(), TallyError> {
         // See: https://arxiv.org/pdf/1804.02973.pdf (example 1)
         let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()];
 
@@ -510,7 +510,7 @@ mod tests {
     }
 
     #[test]
-    fn schulze_example_2()  -> Result<(), TallyError> {
+    fn schulze_example_2() -> Result<(), TallyError> {
         // See: https://arxiv.org/pdf/1804.02973.pdf (example 2)
         let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()];
 
@@ -537,7 +537,7 @@ mod tests {
     }
 
     #[test]
-    fn schulze_example_3() -> Result<(), TallyError>{
+    fn schulze_example_3() -> Result<(), TallyError> {
         // See: https://arxiv.org/pdf/1804.02973.pdf (example 3)
         let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string(), "E".to_string()];
 
@@ -567,7 +567,7 @@ mod tests {
     }
 
     #[test]
-    fn schulze_example_4()-> Result<(), TallyError> {
+    fn schulze_example_4() -> Result<(), TallyError> {
         // See: https://arxiv.org/pdf/1804.02973.pdf (example 4)
         let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()];
 
@@ -588,14 +588,15 @@ mod tests {
         }
 
         // Verify winners - "B" and "D" are tied.
-        assert_eq!(tally.winners().into_unranked()[0], "B".to_string());
-        assert_eq!(tally.winners().into_unranked()[1], "D".to_string());
+        let winners = tally.winners().into_unranked();
+        assert!(winners.contains(&"B".to_owned()) && winners.contains(&"D".to_owned()));
+        assert!(winners.len() == 2);
 
         Ok(())
     }
 
     #[test]
-    fn schulze_example_5()  -> Result<(), TallyError> {
+    fn schulze_example_5() -> Result<(), TallyError> {
         // See Example 5: https://arxiv.org/pdf/1804.02973.pdf
 
         let mut tally = DefaultSchulzeTally::with_candidates(1, Variant::Winning, vec!["a", "b", "c", "d"]);
@@ -607,13 +608,13 @@ mod tests {
 
         // Verify ranking - "a" and "b" are tied.
         let ranked = tally.ranked();
-        assert_eq!(ranked, vec![("d", 0), ("b", 1), ("a", 1), ("c", 2)]);
+        assert!(ranked == vec![("d", 0), ("a", 1), ("b", 1), ("c", 2)] || ranked == vec![("d", 0), ("b", 1), ("a", 1), ("c", 2)]);
 
         Ok(())
     }
 
     #[test]
-    fn schulze_example_6()  -> Result<(), TallyError> {
+    fn schulze_example_6() -> Result<(), TallyError> {
         // See: https://arxiv.org/pdf/1804.02973.pdf (example 6)
         let candidates = vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()];
 
@@ -635,8 +636,9 @@ mod tests {
         }
 
         // Verify winners - "A" and "D" are tied.
-        assert_eq!(tally.winners().into_unranked()[0], "A".to_string());
-        assert_eq!(tally.winners().into_unranked()[1], "D".to_string());
+        let winners = tally.winners().into_unranked();
+        assert!(winners.contains(&"A".to_owned()) && winners.contains(&"D".to_owned()));
+        assert!(winners.len() == 2);
 
         Ok(())
     }

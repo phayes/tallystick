@@ -1,7 +1,7 @@
 use super::errors::TallyError;
 use super::RankedWinners;
 
-use hashbrown::HashMap;
+use std::collections::HashMap;
 use num_traits::cast::NumCast;
 use num_traits::Num;
 use petgraph::algo::tarjan_scc;
