@@ -1,6 +1,6 @@
+use hashbrown::HashMap;
 use num_traits::{Num, NumCast};
 use petgraph::Graph;
-use std::collections::HashMap;
 
 use super::condorcet::CondorcetTally;
 use super::errors::TallyError;

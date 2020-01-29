@@ -28,6 +28,7 @@ petgraph = {default-features = false, version = "0.5.0"}
 derive_more = "0.14.0"
 num-traits = "0.2.6"
 num-rational = {optional = true, version = "0.2.1"}
+hashbrown = "0.6.3"
 
 [dev-dependencies]
 criterion = "0.2"

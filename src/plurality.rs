@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use hashbrown::HashMap;
 use num_traits::cast::NumCast;
 use num_traits::Num;
 use std::hash::Hash;

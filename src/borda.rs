@@ -4,10 +4,10 @@ use super::result::CountedCandidates;
 use super::result::RankedWinners;
 use super::Numeric;
 use super::TallyError;
+use hashbrown::HashMap;
+use hashbrown::HashSet;
 use num_traits::Num;
 use num_traits::NumCast;
-use std::collections::HashMap;
-use std::collections::HashSet;
 use std::hash::Hash;
 use std::ops::AddAssign;
 
