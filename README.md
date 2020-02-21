@@ -1,5 +1,7 @@
 # tallystick
 
+[![docs](https://docs.rs/tallystick/badge.svg)](https://docs.rs/tallystick)
+[![crates.io](https://meritbadge.herokuapp.com/tallystick)](https://crates.io/crates/tallystick)
 [![Build Status](https://travis-ci.org/phayes/tallystick.svg?branch=master)](https://travis-ci.org/phayes/tallystick)
 [![codecov](https://codecov.io/gh/phayes/tallystick/branch/master/graph/badge.svg)](https://codecov.io/gh/phayes/tallystick)
 [![patreon](https://img.shields.io/badge/patreon-donate-green.svg)](https://patreon.com/phayes)
