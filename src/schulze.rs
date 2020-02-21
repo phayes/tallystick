@@ -267,7 +267,7 @@ where
         strongest
     }
 
-    crate fn get_counted(&self) -> CountedCandidates<T, C> {
+    pub(crate) fn get_counted(&self) -> CountedCandidates<T, C> {
         let mut strongest = self.strongest_paths();
 
         // Convert strongest to a hashmap

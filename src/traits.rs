@@ -25,6 +25,7 @@ pub trait Numeric {
 }
 
 // Default implemention of numeric, assumes everything is an integer (non-fraction).
+#[cfg(feature = "nightly")]
 impl<T: Num> Numeric for T {
     default fn floor(self) -> Self {
         self

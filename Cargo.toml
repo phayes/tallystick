@@ -15,17 +15,18 @@ travis-ci = { repository = "phayes/tallystick", branch = "master" }
 codecov = { repository = "phayes/tallystick", branch = "master", service = "github" }
 maintenance = { status = "actively-developed" }
 
-[package.metadata.docs.rs]
-features = ["rational"]
-
 [features]
 default = []
+nightly = []
 rational = ["num-rational"]
+
+[package.metadata.docs.rs]
+features = ["nightly", "rational"]
 
 [dependencies]
 failure = "0.1.6"
 petgraph = {default-features = false, version = "0.5.0"}
-derive_more = "0.99.2"
+derive_more = "0.99.3"
 num-traits = "0.2.11"
 num-rational = {optional = true, version = "0.2.3"}
 hashbrown = "0.6.3"

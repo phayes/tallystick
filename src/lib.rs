@@ -1,16 +1,13 @@
-//! TallyMan is a work-in-progress rust library for tallying votes.
+//! Tallystick is a rust library for tallying votes.
 //!
 //! ## Compatibility
 //!
-//! The `tallystick` crate currently needs nightly rust. It will move to stable when [trait specialization](https://github.com/rust-lang/rust/issues/31844) is stabilized.
+//! Tallystick works with both nightly and stable rust, but more tally methods are enabled with nightly
 //!
 
-#![warn(rust_2018_idioms)]
 #![warn(missing_docs)]
 #![allow(clippy::redundant_field_names, clippy::cognitive_complexity)]
-#![feature(nll)]
-#![feature(specialization)]
-#![feature(crate_visibility_modifier)]
+#![cfg_attr(feature = "nightly", feature(specialization))]
 
 /// Utilities for parsing common vote formats
 pub mod util;
@@ -47,11 +44,15 @@ pub mod approval;
 pub mod score;
 
 /// The single transferable vote (STV) is a ranked choice voting system.
+///
+/// Requires the `nightly` feature to be enabled
+///
 /// Under STV, a voter has a single vote that is initially allocated to their most preferred candidate. Votes are totalled and a quota
 /// (the number of votes required to win) derived. If a candidate achieves quota, the candidate is elected and any surplus vote
 /// is transferred to other candidates in proportion to the voters' stated preferences. If no candidate achieves quota,
 /// the bottom candidate is eliminated with votes being transferred to other candidates as determined by the voters' stated preferences.
 /// These elections, eliminations, and vote transfers continue in rounds until the correct number of candidates are elected.
+#[cfg(feature = "nightly")]
 pub mod stv;
 
 /// The Condorcet method is a ranked-choice voting system that elects the candidate that would win a majority
@@ -61,13 +62,20 @@ pub mod stv;
 pub mod condorcet;
 
 /// The Schulze method is an voting system that selects a single winner using votes that express preferences.
+///
+/// Requires the `nightly` feature to be enabled
+///
 /// The method can also be used to create a sorted list of winners.
 /// The Schulze method is also known as Schwartz Sequential dropping (SSD), cloneproof Schwartz sequential dropping (CSSD), the beatpath method, beatpath winner, path voting, and path winner.
 ///
 /// The Schulze method is a Condorcet method, which means that if there is a candidate who is preferred by a majority over every other candidate in pairwise comparisons, then this candidate will be the winner when the Schulze method is applied.
+#[cfg(feature = "nightly")]
 pub mod schulze;
 
-/// The Borda count is a family of election methods in which voters rank candidates in order of preference.
+/// The Borda count is a family of election methods in which voters rank candidates in order of preference.///
+///
+/// Requires the `nightly` feature to be enabled
+///
 /// The Borda count determines the winner by giving each candidate, for each ballot, a number of points corresponding to the number of candidates ranked lower.
 /// Once all votes have been counted the candidate with the most points is the winner.
 ///
@@ -87,6 +95,7 @@ pub mod schulze;
 ///    let winners = tally.winners().into_unranked();
 ///    println!("The winners are {:?}", winners);
 /// ```
+#[cfg(feature = "nightly")]
 pub mod borda;
 
 // Common Data Structures
@@ -94,7 +103,12 @@ pub mod borda;
 mod result;
 pub use crate::result::RankedWinners;
 
+/// Requires the `nightly` feature to be enabled
+#[cfg(feature = "nightly")]
 mod quota;
+
+/// Requires the `nightly` feature to be enabled
+#[cfg(feature = "nightly")]
 pub use crate::quota::Quota;
 
 mod traits;

@@ -67,9 +67,9 @@ where
     T: Eq + Clone + Hash,                             // Candidate type
     C: Copy + PartialOrd + AddAssign + Num + NumCast, // Count type
 {
-    crate running_total: HashMap<(usize, usize), C>,
-    crate num_winners: u32,
-    crate candidates: HashMap<T, usize>, // Map candiates to a unique integer identifiers
+    pub(crate) running_total: HashMap<(usize, usize), C>,
+    pub(crate) num_winners: u32,
+    pub(crate) candidates: HashMap<T, usize>, // Map candiates to a unique integer identifiers
     check_votes: bool,
 }
 

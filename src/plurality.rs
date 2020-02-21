@@ -190,7 +190,7 @@ where
     }
 
     // Get the running total as CountedCandidates.
-    crate fn get_counted(&self) -> CountedCandidates<T, C> {
+    pub(crate) fn get_counted(&self) -> CountedCandidates<T, C> {
         let mut counted = CountedCandidates::new();
         for (candidate, votecount) in self.running_total.iter() {
             counted.push(candidate.clone(), *votecount);
