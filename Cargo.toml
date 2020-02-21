@@ -39,3 +39,7 @@ maplit = "1.0.2"
 [[bench]]
 name = "benchmark"
 harness = false
+
+# Bench features
+[features]
+default = ["nightly"]

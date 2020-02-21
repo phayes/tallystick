@@ -2,7 +2,9 @@
 //!
 //! ## Compatibility
 //!
-//! Tallystick works with both nightly and stable rust, but more tally methods are enabled with nightly
+//! Tallystick works with both nightly and stable rust, but more functionality is enabled on nightly. Tally methods that must be run with nightly rust are tagged `nightly`.
+//!
+//! To enable nightly support, add `features=["nightly"]` to your `Cargo.toml` entry for `tallystick`.
 //!
 
 #![warn(missing_docs)]
@@ -43,7 +45,7 @@ pub mod approval;
 /// by various other names including "evaluative voting", "utilitarian voting", and "the point system".
 pub mod score;
 
-/// The single transferable vote (STV) is a ranked choice voting system.
+/// The single transferable vote (STV) is a ranked choice voting system. `nightly`
 ///
 /// Requires the `nightly` feature to be enabled
 ///
@@ -61,7 +63,7 @@ pub mod stv;
 /// The Condorcet method isn't guarunteed to produce a single-winner due to the non-transitive nature of group choice.
 pub mod condorcet;
 
-/// The Schulze method is an voting system that selects a single winner using votes that express preferences.
+/// The Schulze method is an voting system that selects a single winner using votes that express preferences. `nightly`
 ///
 /// Requires the `nightly` feature to be enabled
 ///
@@ -72,7 +74,7 @@ pub mod condorcet;
 #[cfg(feature = "nightly")]
 pub mod schulze;
 
-/// The Borda count is a family of election methods in which voters rank candidates in order of preference.///
+/// The Borda count is a family of election methods in which voters rank candidates in order of preference. `nightly`
 ///
 /// Requires the `nightly` feature to be enabled
 ///
@@ -103,7 +105,7 @@ pub mod borda;
 mod result;
 pub use crate::result::RankedWinners;
 
-/// Requires the `nightly` feature to be enabled
+/// Requires the `nightly` feature to be enabled `nightly`
 #[cfg(feature = "nightly")]
 mod quota;
 

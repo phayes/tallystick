@@ -1,7 +1,7 @@
 use super::Numeric;
 use num_traits::Num;
 
-/// A quota defines how many votes are required to win an election in relation to the total number of votes cast.
+/// A quota defines how many votes are required to win an election in relation to the total number of votes cast. `nightly`
 pub enum Quota<C> {
     /// Droop quota. It is defined as:
     ///
