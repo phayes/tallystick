@@ -124,6 +124,7 @@ pub use crate::errors::TallyError;
 
 // Check if a vector has a duplicate
 // This is critical for transitive (ranked) votes
+#[cfg(feature = "nightly")]
 pub(crate) fn check_duplicate<T: PartialEq>(slice: &[T]) -> Result<(), TallyError> {
     for i in 1..slice.len() {
         if slice[i..].contains(&slice[i - 1]) {
