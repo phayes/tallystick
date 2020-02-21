@@ -1,9 +1,9 @@
 [package]
 name = "tallyman"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["phayes <patrick.d.hayes@gmail.com>"]
 edition = "2018"
 description = "Removed due to trademark concerns. Please use tallystick crate instead"
 maintenance = { status = "deprecated" }
 license = "MIT OR Apache-2.0"
-
+readme = "README.md"
