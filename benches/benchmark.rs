@@ -7,6 +7,7 @@ use std::hash::Hash;
 
 const SAMPLE_SIZE: usize = 100;
 
+#[cfg(feature = "nightly")]
 criterion_group!(
     benches,
     borda_benchmark,
@@ -17,6 +18,16 @@ criterion_group!(
     approval_benchmark,
     score_benchmark
 );
+
+#[cfg(not(feature = "nightly"))]
+criterion_group!(
+    benches,
+    condorcet_benchmark,
+    plurality_benchmark,
+    approval_benchmark,
+    score_benchmark
+);
+
 criterion_main!(benches);
 
 fn plurality_benchmark(c: &mut Criterion) {
@@ -80,6 +91,7 @@ fn condorcet_benchmark(c: &mut Criterion) {
     );
 }
 
+#[cfg(feature = "nightly")]
 fn stv_benchmark(c: &mut Criterion) {
     c.bench(
         "stv",
@@ -96,6 +108,7 @@ fn stv_benchmark(c: &mut Criterion) {
     );
 }
 
+#[cfg(feature = "nightly")]
 fn schulze_benchmark(c: &mut Criterion) {
     c.bench(
         "schulze",
@@ -121,6 +134,7 @@ fn schulze_benchmark(c: &mut Criterion) {
     );
 }
 
+#[cfg(feature = "nightly")]
 fn borda_benchmark(c: &mut Criterion) {
     c.bench(
         "borda",
@@ -140,26 +154,6 @@ fn borda_benchmark(c: &mut Criterion) {
 // Build a tally, put votes into the tally, and compute the results.
 fn condorcet<T: Eq + Clone + Hash>(votes: Vec<Vec<T>>, candidates: Vec<T>) {
     let mut tally = tallystick::condorcet::DefaultCondorcetTally::with_candidates(1, candidates);
-
-    for vote in votes {
-        tally.add(&vote);
-    }
-
-    tally.winners();
-}
-
-fn stv<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
-    let mut tally = tallystick::stv::DefaultTally::with_capacity(1, tallystick::Quota::Droop, num_candidates, votes.len());
-
-    for vote in votes.drain(0..) {
-        tally.add(vote);
-    }
-
-    tally.winners();
-}
-
-fn schulze<T: Eq + Clone + Hash>(votes: Vec<Vec<T>>, candidates: Vec<T>) {
-    let mut tally = tallystick::schulze::DefaultSchulzeTally::with_candidates(1, tallystick::schulze::Variant::Winning, candidates);
 
     for vote in votes {
         tally.add(&vote);
@@ -188,21 +182,44 @@ fn approval<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize)
     tally.winners();
 }
 
-fn borda<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
-    let mut tally = tallystick::borda::DefaultBordaTally::with_capacity(1, tallystick::borda::Variant::Borda, num_candidates);
-
-    for vote in votes.drain(0..) {
-        tally.add(vote).unwrap();
-    }
-
-    tally.winners();
-}
-
 fn score<T: Eq + Clone + Hash>(mut votes: Vec<Vec<(T, u64)>>, num_candidates: usize) {
     let mut tally = tallystick::score::DefaultScoreTally::with_capacity(1, num_candidates);
 
     for vote in votes.drain(0..) {
         tally.add(vote);
+    }
+
+    tally.winners();
+}
+
+#[cfg(feature = "nightly")]
+fn stv<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
+    let mut tally = tallystick::stv::DefaultTally::with_capacity(1, tallystick::Quota::Droop, num_candidates, votes.len());
+
+    for vote in votes.drain(0..) {
+        tally.add(vote);
+    }
+
+    tally.winners();
+}
+
+#[cfg(feature = "nightly")]
+fn schulze<T: Eq + Clone + Hash>(votes: Vec<Vec<T>>, candidates: Vec<T>) {
+    let mut tally = tallystick::schulze::DefaultSchulzeTally::with_candidates(1, tallystick::schulze::Variant::Winning, candidates);
+
+    for vote in votes {
+        tally.add(&vote);
+    }
+
+    tally.winners();
+}
+
+#[cfg(feature = "nightly")]
+fn borda<T: Eq + Clone + Hash>(mut votes: Vec<Vec<T>>, num_candidates: usize) {
+    let mut tally = tallystick::borda::DefaultBordaTally::with_capacity(1, tallystick::borda::Variant::Borda, num_candidates);
+
+    for vote in votes.drain(0..) {
+        tally.add(vote).unwrap();
     }
 
     tally.winners();
