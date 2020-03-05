@@ -68,7 +68,7 @@ where
     C: Copy + PartialOrd + AddAssign + Num + NumCast, // Count type
 {
     pub(crate) running_total: HashMap<(usize, usize), C>,
-    pub(crate) num_winners: u32,
+    pub(crate) num_winners: usize,
     pub(crate) candidates: HashMap<T, usize>, // Map candiates to a unique integer identifiers
     check_votes: bool,
 }
@@ -82,7 +82,7 @@ where
     ///
     /// If there is a tie, the number of winners might be more than `num_winners`.
     /// (See [`winners()`](#method.winners) for more information on ties.)
-    pub fn new(num_winners: u32) -> Self {
+    pub fn new(num_winners: usize) -> Self {
         CondorcetTally {
             running_total: HashMap::new(),
             num_winners: num_winners,
@@ -92,7 +92,7 @@ where
     }
 
     /// Create a new `CondorcetTally` with the given number of winners, and the provided candidates
-    pub fn with_candidates(num_winners: u32, candidates: Vec<T>) -> Self {
+    pub fn with_candidates(num_winners: usize, candidates: Vec<T>) -> Self {
         let mut tally = CondorcetTally {
             running_total: HashMap::with_capacity(candidates.len() ^ 2),
             num_winners: num_winners,
@@ -240,7 +240,7 @@ where
     ///    //   Bob has a rank of 1
     ///    //   Carlos has a rank of 2
     /// ```
-    pub fn ranked(&self) -> Vec<(T, u32)> {
+    pub fn ranked(&self) -> Vec<(T, usize)> {
         // Compute smith-sets using Tarjan's strongly connected components algorithm.
         let graph = self.build_graph();
         let smith_sets = tarjan_scc(&graph);
@@ -252,7 +252,7 @@ where
         }
 
         // Add to ranked list.
-        let mut ranked = Vec::<(T, u32)>::with_capacity(self.candidates.len());
+        let mut ranked = Vec::<(T, usize)>::with_capacity(self.candidates.len());
         for (rank, smith_set) in smith_sets.iter().enumerate() {
             // We need to add all members of a smith set at the same time,
             // even if it means more winners than needed. All members of a smith_set
@@ -261,7 +261,7 @@ where
             // TODO: Check performance difference between cloning here and using a stable graph (where we can remove_node())
             for graph_id in smith_set.iter() {
                 let candidate = graph.node_weight(*graph_id).unwrap(); // Safe to unwrap here since graph should always contain a node-weight at this graph-id.
-                ranked.push((candidate.clone(), rank as u32));
+                ranked.push((candidate.clone(), rank));
             }
         }
 

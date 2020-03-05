@@ -54,7 +54,7 @@ where
     C: Copy + PartialOrd + AddAssign + Num + NumCast, // Count type
 {
     running_total: HashMap<T, C>,
-    num_winners: u32,
+    num_winners: usize,
 }
 
 impl<T, C> PluralityTally<T, C>
@@ -66,7 +66,7 @@ where
     ///
     /// If there is a tie, the number of winners might be more than `num_winners`.
     /// (See [`winners()`](#method.winners) for more information on ties.)
-    pub fn new(num_winners: u32) -> Self {
+    pub fn new(num_winners: usize) -> Self {
         PluralityTally {
             running_total: HashMap::new(),
             num_winners: num_winners,
@@ -74,7 +74,7 @@ where
     }
 
     /// Create a new `PluralityTally` with the given number of winners, and number of expected candidates.
-    pub fn with_capacity(num_winners: u32, expected_candidates: usize) -> Self {
+    pub fn with_capacity(num_winners: usize, expected_candidates: usize) -> Self {
         PluralityTally {
             running_total: HashMap::with_capacity(expected_candidates),
             num_winners: num_winners,
@@ -185,7 +185,7 @@ where
     ///    //   Bob has a rank of 1
     ///    //   Carlos has a rank of 2
     /// ```
-    pub fn ranked(&self) -> Vec<(T, u32)> {
+    pub fn ranked(&self) -> Vec<(T, usize)> {
         self.get_counted().into_ranked(0).into_vec()
     }
 

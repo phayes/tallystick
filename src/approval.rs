@@ -63,14 +63,14 @@ where
     ///
     /// If there is a tie, the number of winners might be more than `num_winners`.
     /// (See [`winners()`](#method.winners) for more information on ties.)
-    pub fn new(num_winners: u32) -> Self {
+    pub fn new(num_winners: usize) -> Self {
         ApprovalTally {
             plurality: PluralityTally::new(num_winners),
         }
     }
 
     /// Create a new `ApprovalTally` with the given number of winners, and number of expected candidates.
-    pub fn with_capacity(num_winners: u32, expected_candidates: usize) -> Self {
+    pub fn with_capacity(num_winners: usize, expected_candidates: usize) -> Self {
         ApprovalTally {
             plurality: PluralityTally::with_capacity(num_winners, expected_candidates),
         }
@@ -163,7 +163,7 @@ where
     ///    //   Alice has a rank of 1
     ///    //   Carol has a rank of 2
     /// ```
-    pub fn ranked(&self) -> Vec<(T, u32)> {
+    pub fn ranked(&self) -> Vec<(T, usize)> {
         self.plurality.ranked()
     }
 }

@@ -99,7 +99,7 @@ where
     /// (See [`winners()`](#method.winners) for more information on ties.)
     ///
     /// This may panic if `Variant::Ratio` is used with an integer count type. (A float count type should be used instead).
-    pub fn new(num_winners: u32, variant: Variant) -> Self {
+    pub fn new(num_winners: usize, variant: Variant) -> Self {
         Self::check_types(&variant);
         SchulzeTally {
             variant: variant,
@@ -110,7 +110,7 @@ where
     /// Create a new `SchulzeTally` with the given number of winners, and number of expected candidates.
     ///
     /// This may panic if `Variant::Ratio` is used with an integer count type. (A float count type should be used instead).
-    pub fn with_candidates(num_winners: u32, variant: Variant, candidates: Vec<T>) -> Self {
+    pub fn with_candidates(num_winners: usize, variant: Variant, candidates: Vec<T>) -> Self {
         Self::check_types(&variant);
         SchulzeTally {
             variant: variant,
@@ -296,7 +296,7 @@ where
 
     /// Get a ranked list of all candidates. Candidates with the same rank are tied.
     /// Candidates are ranked in ascending order. The highest ranked candidate has a rank of `0`.
-    pub fn ranked(&self) -> Vec<(T, u32)> {
+    pub fn ranked(&self) -> Vec<(T, usize)> {
         self.get_counted().into_ranked(0).into_vec()
     }
 

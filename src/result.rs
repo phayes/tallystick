@@ -6,7 +6,7 @@ use std::ops::RangeBounds;
 // A RankedWinner is a winner in an election, ranked ascending (starting from zero).
 // A ranked-winner with a lower rank beats a ranked-winner with a higher rank.
 // Ranked-winners with the same rank are tied.
-type RankedWinner<T> = (T, u32);
+type RankedWinner<T> = (T, usize);
 
 /// `RankedWinners` is a ranked list of winning candidates, sorted according to rank.
 /// Ranks are in ascending order. A `0` ranked winner is more significant than a `3` ranked winner.
@@ -15,7 +15,7 @@ type RankedWinner<T> = (T, u32);
 #[derive(Debug, Eq, PartialEq, From, Default)]
 pub struct RankedWinners<T: Clone> {
     winners: Vec<RankedWinner<T>>,
-    num_winners: u32,
+    num_winners: usize,
 }
 
 impl<T: Clone + Eq> RankedWinners<T> {
@@ -69,7 +69,7 @@ impl<T: Clone + Eq> RankedWinners<T> {
     }
 
     /// Get the rank of a single winner.
-    pub fn rank(&self, candidate: &T) -> Option<u32> {
+    pub fn rank(&self, candidate: &T) -> Option<usize> {
         for (winner, rank) in self.iter() {
             if candidate == winner {
                 return Some(*rank);
@@ -125,7 +125,7 @@ impl<T: Clone + Eq> RankedWinners<T> {
     }
 
     // New empty list of ranked winners
-    pub(crate) fn new(num_winners: u32) -> Self {
+    pub(crate) fn new(num_winners: usize) -> Self {
         RankedWinners {
             winners: Vec::new(),
             num_winners: num_winners,
@@ -134,7 +134,7 @@ impl<T: Clone + Eq> RankedWinners<T> {
 
     // Push a new winner onto the end of of the list of winners
     // Make sure to call sort() before passing the Winners back to the user.
-    pub(crate) fn push(&mut self, candidate: T, rank: u32) {
+    pub(crate) fn push(&mut self, candidate: T, rank: usize) {
         self.winners.push((candidate, rank));
     }
 
@@ -144,11 +144,11 @@ impl<T: Clone + Eq> RankedWinners<T> {
     }
 
     // Create winners from a list of ranked candidates
-    pub(crate) fn from_ranked(mut ranked: Vec<(T, u32)>, num_winners: u32) -> Self {
+    pub(crate) fn from_ranked(mut ranked: Vec<(T, usize)>, num_winners: usize) -> Self {
         let mut winners = Self::new(num_winners);
         let mut prev_rank = 0;
         for (candidate, rank) in ranked.drain(0..) {
-            if winners.len() as u32 >= num_winners && rank != prev_rank {
+            if winners.len() >= num_winners && rank != prev_rank {
                 break;
             }
             winners.push(candidate, rank);
@@ -200,7 +200,7 @@ impl<T: Clone + Eq, C: Copy + Num + PartialOrd> CountedCandidates<T, C> {
     /// Transform candidates into a vector of RankedWinners.
     /// Limit the number of winners by "num_winners", returned number may be over this if there is a tie
     /// Set num_winners to `0` for no limit.
-    pub(crate) fn into_ranked(mut self, num_winners: u32) -> RankedWinners<T> {
+    pub(crate) fn into_ranked(mut self, num_winners: usize) -> RankedWinners<T> {
         let mut ranked = RankedWinners::<T>::new(num_winners);
 
         if self.len() == 0 {
@@ -213,7 +213,7 @@ impl<T: Clone + Eq, C: Copy + Num + PartialOrd> CountedCandidates<T, C> {
         let mut prev = self.0[0].1;
         for (candidate, score) in self.0.drain(0..) {
             if score != prev {
-                if num_winners != 0 && ranked.len() as u32 >= num_winners {
+                if num_winners != 0 && ranked.len() >= num_winners {
                     return ranked;
                 }
                 rank += 1;

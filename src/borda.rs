@@ -192,7 +192,7 @@ where
 {
     running_total: HashMap<Vec<T>, C>,
     candidates: HashSet<T>,
-    num_winners: u32,
+    num_winners: usize,
     variant: Variant<C>,
 }
 
@@ -205,7 +205,7 @@ where
     ///
     /// If there is a tie, the number of winners might be more than `num_winners`.
     /// (See [`winners()`](#method.winners) for more information on ties.)
-    pub fn new(num_winners: u32, variant: Variant<C>) -> Self {
+    pub fn new(num_winners: usize, variant: Variant<C>) -> Self {
         BordaTally {
             running_total: HashMap::new(),
             candidates: HashSet::new(),
@@ -215,7 +215,7 @@ where
     }
 
     /// Create a new `BordaTally` with the given number of winners, and number of expected candidates.
-    pub fn with_capacity(num_winners: u32, variant: Variant<C>, expected_candidates: usize) -> Self {
+    pub fn with_capacity(num_winners: usize, variant: Variant<C>, expected_candidates: usize) -> Self {
         BordaTally {
             running_total: HashMap::with_capacity(expected_candidates),
             candidates: HashSet::with_capacity(expected_candidates),
@@ -283,7 +283,7 @@ where
     }
 
     /// Get a ranked list of all candidates. Candidates with the same rank are tied.
-    pub fn ranked(&self) -> Vec<(T, u32)> {
+    pub fn ranked(&self) -> Vec<(T, usize)> {
         let mut counted = CountedCandidates::new();
         for (candidate, votecount) in self.totals().iter() {
             counted.push(candidate.clone(), *votecount);

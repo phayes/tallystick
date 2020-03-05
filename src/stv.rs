@@ -28,7 +28,7 @@ where
     C: Copy + PartialOrd + AddAssign + Num + NumCast, // vote count type
 {
     running_total: HashMap<T, Vec<WeightedVote<T, C>>>,
-    num_winners: u32,
+    num_winners: usize,
     quota: Quota<C>,
     expected_votes: Option<usize>, // Expected votes *per candidate*.
 }
@@ -38,7 +38,7 @@ where
     T: Eq + Clone + Hash,                             // Candidate
     C: Copy + PartialOrd + AddAssign + Num + NumCast, // vote count type
 {
-    pub fn new(num_winners: u32, quota: Quota<C>) -> Self {
+    pub fn new(num_winners: usize, quota: Quota<C>) -> Self {
         Tally {
             running_total: HashMap::new(),
             num_winners: num_winners,
@@ -47,7 +47,7 @@ where
         }
     }
 
-    pub fn with_capacity(num_winners: u32, quota: Quota<C>, expected_candidates: usize, expected_votes: usize) -> Self {
+    pub fn with_capacity(num_winners: usize, quota: Quota<C>, expected_candidates: usize, expected_votes: usize) -> Self {
         Tally {
             running_total: HashMap::with_capacity(expected_candidates),
             num_winners: num_winners,
@@ -98,7 +98,7 @@ where
 
         let mut winners = RankedWinners::new(self.num_winners);
 
-        let mut rank: u32 = 0;
+        let mut rank: usize = 0;
         loop {
             // Step 1. If we have less candidates left than there are spots to fill, they are all winners
             if self.running_total.len() <= self.num_winners as usize - winners.len() {
@@ -121,7 +121,7 @@ where
             }
 
             // Step 3. If we have enough winners, end the tally and return results.
-            if (winners.len() + new_winners.len()) as u32 >= self.num_winners {
+            if (winners.len() + new_winners.len()) >= self.num_winners {
                 for winner in new_winners.drain(0..) {
                     winners.push(winner, rank);
                 }
@@ -148,7 +148,7 @@ where
                 }
 
                 // If we have enough winners, return it.
-                if winners.len() as u32 >= self.num_winners {
+                if winners.len() >= self.num_winners {
                     return winners;
                 }
 
