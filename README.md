@@ -38,7 +38,7 @@ _Current state is very unstable. It is not currently recommended for use. See ch
 | ✓       | Approval          |                                      | 4 million v/s   |                            |
 | ⚠       | STV               | Newland-Britton, Meek, Warren        | 3 million v/s   | Single Transferable Vote   |
 |         | CPO-STV           |                                      |                 |                            |
-|         | Instant Runoff    |                                      |                 |                            |
+| ⚠       | Instant Runoff    |                                      |                 |                            |
 |         | Contingent        |                                      |                 |                            |
 |         | Supplementary     |                                      |                 |                            |
 | ✓       | Condorcet         |                                      | 2 million v/s   |                            |
