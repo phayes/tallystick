@@ -40,6 +40,7 @@ _Current state is very unstable. It is not currently recommended for use. See ch
 |         | CPO-STV           |                                      |                 |                            |
 |         | Instant Runoff    |                                      |                 |                            |
 |         | Contingent        |                                      |                 |                            |
+|         | Supplementary     |                                      |                 |                            |
 | ✓       | Condorcet         |                                      | 2 million v/s   |                            |
 |         | Copeland          |                                      |                 |                            |
 | ✓       | Schulze           | Winning, Margin, Ratio               | 2 million v/s   |                            |
