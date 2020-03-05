@@ -27,6 +27,7 @@ where
 {
     pub(crate) count: C,
     children: HashMap<T, VoteTree<T, C>>,
+    candidates: Option<HashSet<T>>, // Only exists on top level VoteTree
 }
 
 impl<T, C> VoteTree<T, C>
@@ -38,7 +39,12 @@ where
         VoteTree {
             count: C::zero(),
             children: HashMap::new(),
+            candidates: Some(HashSet::new()),
         }
+    }
+
+    pub(crate) fn candidates(&self) -> Vec<T> {
+        self.candidates.clone().unwrap().drain().collect()
     }
 
     pub(crate) fn add(&mut self, vote: &[T], count: C) -> C {
@@ -46,12 +52,25 @@ where
         if vote.is_empty() {
             self.count
         } else {
+            // Record all candidates
+            match &mut self.candidates {
+                Some(cand) => {
+                    for v in vote {
+                        // TODO: eliminate this clone
+                        cand.insert(v.clone());
+                    }
+                }
+                None => {}
+            };
+
+            // TODO: Map candidates to usize to remove clones
             self.children
                 // TODO: remove this clone - must use raw_entry
                 .entry(vote[0].clone())
                 .or_insert(VoteTree {
                     count: C::zero(),
                     children: HashMap::new(),
+                    candidates: None,
                 })
                 .add(&vote[1..], count)
         }
@@ -114,6 +133,12 @@ where
         let mut scores = HashMap::new();
         let total = self.count * *base;
         let excess = total - self.transfer_votes(&mut scores, weights, base, base, transfer);
+        (excess, scores)
+    }
+
+    pub(crate) fn assign_votes(&self, eliminated: &HashSet<T>) -> (C, HashMap<T, C>) {
+        let mut scores = HashMap::new();
+        let excess = self.count - self.distribute_votes(&mut scores, &eliminated);
         (excess, scores)
     }
 
@@ -259,5 +284,42 @@ mod tests {
         let mut points2 = HashMap::new();
         x.count_ranks(&mut points2, &([0, 2].iter().cloned().collect()), 0);
         assert_eq!(points2[&(1, 0)], 16);
+    }
+
+    #[test]
+    fn assign_votes_discrete() {
+        let x = VoteTree::from(vec![
+            (1, vec![0, 1]),
+            (2, vec![0, 2]),
+            (3, vec![1, 0]),
+            (4, vec![1, 2]),
+            (5, vec![2, 0]),
+            (6, vec![2, 1]),
+        ]);
+
+        let empty_hs = HashSet::new();
+        let (excess, score) = x.assign_votes(&empty_hs);
+        assert_eq!(excess, 0);
+        assert_eq!(score, (0..3).map(|e| (e as u32, x.first_vote_count(&e))).collect());
+
+        let (excess2, score2) = x.assign_votes(&([0u32, 2u32].iter().cloned().collect()));
+        assert_eq!(*score2.get(&0).unwrap_or(&0), 0);
+        assert_eq!(*score2.get(&2).unwrap_or(&0), 0);
+        assert_eq!(score2[&1], x.count - excess2);
+    }
+    #[test]
+    fn assign_zero() {
+        let x = VoteTree::from(vec![
+            (3, vec![0, 2, 3]),
+            (4, vec![0, 2, 1]),
+            (2, vec![3, 0, 2]),
+            (1, vec![1]),
+            (2, vec![1, 3, 2, 0]),
+            (1, vec![2, 3, 1]),
+        ]);
+
+        let vsum = x.count;
+        let (excess, score) = x.assign_votes(&([1u32].iter().cloned().collect()));
+        assert_eq!(excess + score.values().sum::<u64>(), vsum);
     }
 }
