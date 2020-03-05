@@ -105,6 +105,10 @@ pub mod borda;
 mod result;
 pub use crate::result::RankedWinners;
 
+mod votetree;
+pub use votetree::Transfer;
+pub(crate) use votetree::VoteTree;
+
 /// Requires the `nightly` feature to be enabled `nightly`
 #[cfg(feature = "nightly")]
 mod quota;
