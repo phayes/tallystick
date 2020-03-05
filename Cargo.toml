@@ -30,6 +30,7 @@ derive_more = "0.99.3"
 num-traits = "0.2.11"
 num-rational = {optional = true, version = "0.2.3"}
 hashbrown = "0.7.0"
+partial-min-max = "0.4"
 
 [dev-dependencies]
 criterion = "0.2"

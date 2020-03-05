@@ -156,7 +156,7 @@ fn condorcet<T: Eq + Clone + Hash>(votes: Vec<Vec<T>>, candidates: Vec<T>) {
     let mut tally = tallystick::condorcet::DefaultCondorcetTally::with_candidates(1, candidates);
 
     for vote in votes {
-        tally.add(&vote);
+        tally.add(&vote).unwrap();
     }
 
     tally.winners();
@@ -208,7 +208,7 @@ fn schulze<T: Eq + Clone + Hash>(votes: Vec<Vec<T>>, candidates: Vec<T>) {
     let mut tally = tallystick::schulze::DefaultSchulzeTally::with_candidates(1, tallystick::schulze::Variant::Winning, candidates);
 
     for vote in votes {
-        tally.add(&vote);
+        tally.add(&vote).unwrap();
     }
 
     tally.winners();

@@ -100,13 +100,26 @@ pub mod schulze;
 #[cfg(feature = "nightly")]
 pub mod borda;
 
+/// WORK IN PROGRESS
+#[cfg(feature = "nightly")]
+#[allow(dead_code)]
+#[allow(missing_docs)]
+pub mod irv;
+
 // Common Data Structures
 // ----------------------
 mod result;
 pub use crate::result::RankedWinners;
 
+// TODO: Remove dead code
+#[cfg(feature = "nightly")]
+#[allow(dead_code)]
 mod votetree;
+
+#[cfg(feature = "nightly")]
 pub use votetree::Transfer;
+
+#[cfg(feature = "nightly")]
 pub(crate) use votetree::VoteTree;
 
 /// Requires the `nightly` feature to be enabled `nightly`

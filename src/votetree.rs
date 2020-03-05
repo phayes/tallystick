@@ -2,11 +2,11 @@
 //! This data structure is taken from https://gitlab.com/mbq/wybr,
 //! with a special thanks to mbq.
 
+use super::Numeric;
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use num_traits::cast::NumCast;
 use num_traits::Num;
-use std::cmp::Ord;
 use std::hash::Hash;
 use std::ops::AddAssign;
 
@@ -22,8 +22,8 @@ pub enum Transfer {
 
 pub(crate) struct VoteTree<T, C = u64>
 where
-    T: Eq + Clone + Hash,                                   // Candidate type
-    C: Copy + PartialOrd + AddAssign + Num + NumCast + Ord, // Count type
+    T: Eq + Clone + Hash,                                       // Candidate type
+    C: Copy + PartialOrd + AddAssign + Num + NumCast + Numeric, // Count type
 {
     pub(crate) count: C,
     children: HashMap<T, VoteTree<T, C>>,
@@ -32,8 +32,8 @@ where
 
 impl<T, C> VoteTree<T, C>
 where
-    T: Eq + Clone + Hash,                                   // Candidate type
-    C: Copy + PartialOrd + AddAssign + Num + NumCast + Ord, // Count type
+    T: Eq + Clone + Hash,                                       // Candidate type
+    C: Copy + PartialOrd + AddAssign + Num + NumCast + Numeric, // Count type
 {
     pub(crate) fn new() -> VoteTree<T, C> {
         VoteTree {
@@ -91,10 +91,8 @@ where
     }
 
     pub(crate) fn transfer_votes(&self, scores: &mut HashMap<T, C>, weights: &HashMap<T, C>, vote: &C, base: &C, transfer: Transfer) -> C {
-        use std::cmp::min;
-
+        use partial_min_max::min;
         let zero = C::zero();
-
         let mut assigned = C::zero();
         for (c, deeper) in &self.children {
             let given = match transfer {
