@@ -27,7 +27,6 @@ where
     C: Copy + PartialOrd + AddAssign + Num + NumCast + Numeric, // vote count type
 {
     running_total: VoteTree<T, C>,
-    expected_votes: Option<usize>, // Expected votes *per candidate*.
     transfer: Transfer,
 }
 
@@ -39,16 +38,14 @@ where
     pub fn new(transfer: Transfer) -> Self {
         Tally {
             running_total: VoteTree::new(),
-            expected_votes: None,
             transfer: transfer,
         }
     }
 
-    pub fn with_capacity(transfer: Transfer, expected_candidates: usize, expected_votes: usize) -> Self {
+    /// Create a new `irv::Tally` with the provided candidates
+    pub fn with_candidates(transfer: Transfer, candidates: Vec<T>) -> Self {
         Tally {
-            // TODO: VoteTree::with_capacity()
-            running_total: VoteTree::new(),
-            expected_votes: Some((expected_votes / expected_candidates) * 2),
+            running_total: VoteTree::with_candidates(candidates),
             transfer: transfer,
         }
     }
@@ -67,23 +64,21 @@ where
         self.running_total.add(selection, C::one());
     }
 
-    pub fn winners(&mut self) -> RankedWinners<T> {
-        let zero = C::zero();
-        let two = C::one() + C::one();
+    pub fn tally_ranked(&self) -> Vec<(T, usize)> {
         let max = C::max_value();
 
         let candidates = self.running_total.candidates();
+        let mut inverse_ranked = Vec::<(T, usize)>::with_capacity(candidates.len());
+        let mut inverse_rank = 0;
         let mut eliminated = HashSet::new();
-
-        let mut winners = RankedWinners::new(1);
 
         loop {
             // First Eagerly assign tally passing through eliminated candidates
-            let (excess, mut score) = self.running_total.assign_votes(&eliminated);
+            let (_excess, mut score) = self.running_total.assign_votes(&eliminated);
 
-            //Scores lack elements for which there is not direct vote; we have to supply
-            //for elimination to verbosely mention them.
-            //Otherwise, some candidate may appear on one round after it should be eliminated.
+            // Scores lack elements for which there is not direct vote; we have to supply
+            // for elimination to verbosely mention them.
+            // Otherwise, some candidate may appear on one round after it should be eliminated.
             for c in candidates.iter() {
                 if !eliminated.contains(c) {
                     score.entry(c.clone()).or_insert(C::zero());
@@ -92,7 +87,7 @@ where
 
             // If there are no more valid candidates, return early
             if score.is_empty() {
-                return winners;
+                return inverse_ranked;
             }
 
             // Check for case where all remaining candidates are tied
@@ -109,44 +104,43 @@ where
             }
             if all_tied {
                 for (cand, _) in score {
-                    winners.push(cand, 0);
+                    inverse_ranked.push((cand, inverse_rank));
                 }
-                return winners;
+                break;
             }
 
-            // Possible winner must have best score which is better than quota
-            // TODO: Is this `two` correct?
-            let quota = (self.running_total.count - excess) / two;
-            let max_score = score.values().max().unwrap_or(&zero);
+            // Calculate the worst performing candidates and add them to the reverse ranking
+            let min_score = score.values().min().unwrap_or(&max);
+            let mut loosers = Vec::<T>::new();
             for (cand, count) in score.iter() {
-                if count == max_score && *count > quota {
-                    winners.push(cand.clone(), 0);
+                if count == min_score {
+                    loosers.push(cand.clone());
                 }
             }
-
-            if !winners.is_empty() {
-                return winners;
-            } else {
-                // We need another round; to this end, we need to select a set of
-                // candidates with a minimal score, and eliminate one of them
-                let min_score = score.values().min().unwrap_or(&max);
-                let mut loosers = Vec::<T>::new();
-                for (cand, count) in score.iter() {
-                    if count == min_score {
-                        loosers.push(cand.clone());
-                    }
-                }
-                if loosers.is_empty() {
-                    // No winner
-                    return winners;
-                }
-
-                // Remove all loosers
-                for looser in loosers.drain(..) {
-                    eliminated.insert(looser);
-                }
+            if loosers.is_empty() {
+                // No one left
+                break;
             }
+
+            // Remove all loosers
+            for looser in loosers.drain(..) {
+                inverse_ranked.push((looser.clone(), inverse_rank));
+                eliminated.insert(looser);
+            }
+
+            inverse_rank += 1;
         }
+
+        let num_ranked = inverse_ranked.len();
+        let mut ranked = Vec::<(T, usize)>::with_capacity(num_ranked);
+        for (cand, inverse_rank) in inverse_ranked.drain(..).rev() {
+            ranked.push((cand, num_ranked - inverse_rank - 1));
+        }
+        ranked
+    }
+
+    pub fn tally_winners(&self) -> RankedWinners<T> {
+        RankedWinners::from_ranked(self.tally_ranked(), 1)
     }
 }
 
@@ -166,10 +160,19 @@ mod tests {
         tally.add_weighted(vec!["Knoxville", "Chattanooga", "Nashville", "Memphis"], 17);
 
         // Verify winners
-        let winners = tally.winners();
+        let winners = tally.tally_winners();
         assert!(winners.contains(&"Knoxville"));
 
-        // TODO: RANKED via reverse elimination
+        // Verify ranking
+        let ranked = tally.tally_ranked();
+        assert_eq!(ranked[0].0, "Knoxville");
+        assert_eq!(ranked[0].1, 0);
+        assert_eq!(ranked[1].0, "Memphis");
+        assert_eq!(ranked[1].1, 1);
+        assert_eq!(ranked[2].0, "Nashville");
+        assert_eq!(ranked[2].1, 2);
+        assert_eq!(ranked[3].0, "Chattanooga");
+        assert_eq!(ranked[3].1, 3);
 
         Ok(())
     }

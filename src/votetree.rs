@@ -8,6 +8,7 @@ use hashbrown::HashSet;
 use num_traits::cast::NumCast;
 use num_traits::Num;
 use std::hash::Hash;
+use std::iter::FromIterator;
 use std::ops::AddAssign;
 
 #[derive(Copy, Clone)]
@@ -43,12 +44,20 @@ where
         }
     }
 
+    pub(crate) fn with_candidates(candidates: Vec<T>) -> VoteTree<T, C> {
+        VoteTree {
+            count: C::zero(),
+            children: HashMap::new(),
+            candidates: Some(HashSet::from_iter(candidates)),
+        }
+    }
+
     pub(crate) fn candidates(&self) -> Vec<T> {
         self.candidates.clone().unwrap().drain().collect()
     }
 
-    pub(crate) fn add(&mut self, vote: &[T], count: C) -> C {
-        self.count += count;
+    pub(crate) fn add(&mut self, vote: &[T], weight: C) -> C {
+        self.count += weight;
         if vote.is_empty() {
             self.count
         } else {
@@ -56,23 +65,22 @@ where
             match &mut self.candidates {
                 Some(cand) => {
                     for v in vote {
-                        // TODO: eliminate this clone
-                        cand.insert(v.clone());
+                        cand.get_or_insert_with(v, |c| c.clone());
                     }
                 }
                 None => {}
             };
 
             // TODO: Map candidates to usize to remove clones
+            // TODO: For ranked votes, check for equal ranks, then divide weight by number of equal ranks
             self.children
-                // TODO: remove this clone - must use raw_entry
                 .entry(vote[0].clone())
                 .or_insert(VoteTree {
                     count: C::zero(),
                     children: HashMap::new(),
                     candidates: None,
                 })
-                .add(&vote[1..], count)
+                .add(&vote[1..], weight)
         }
     }
 

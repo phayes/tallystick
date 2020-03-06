@@ -99,7 +99,7 @@ impl<T: Clone + Eq> RankedWinners<T> {
     /// then there will be an overflow with both candidates being equally ranked to
     /// fill the 3rd seat.
     pub fn check_overflow(&self) -> bool {
-        self.len() > self.num_winners as usize
+        self.len() > self.num_winners
     }
 
     /// Get all tied least-significantly ranked winners that overflow the wanted number of winners.
