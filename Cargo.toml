@@ -29,7 +29,7 @@ petgraph = {default-features = false, version = "0.5.0"}
 derive_more = "0.99.3"
 num-traits = "0.2.11"
 num-rational = {optional = true, version = "0.2.3"}
-hashbrown = "0.7.0"
+hashbrown = "0.9.1"
 partial-min-max = "0.4"
 
 [dev-dependencies]
