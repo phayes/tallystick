@@ -34,7 +34,7 @@ partial-min-max = "0.4"
 
 [dev-dependencies]
 criterion = "0.2"
-rand = "0.7.3"
+rand = "0.8.1"
 maplit = "1.0.2"
 
 [[bench]]
