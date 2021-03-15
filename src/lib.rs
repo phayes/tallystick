@@ -100,10 +100,8 @@ pub mod schulze;
 #[cfg(feature = "nightly")]
 pub mod borda;
 
-/// WORK IN PROGRESS
 #[cfg(feature = "nightly")]
 #[allow(dead_code)]
-#[allow(missing_docs)]
 pub mod irv;
 
 // Common Data Structures

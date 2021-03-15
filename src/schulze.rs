@@ -200,7 +200,7 @@ where
     /// This is a well-known problem in graph theory sometimes called the widest path problem.
     /// This function uses a variant of the Floyd–Warshall algorithm.
     ///
-    /// See: [https://en.wikipedia.org/wiki/Schulze_method#Implementations](https://en.wikipedia.org/wiki/Schulze_method#Implementations)
+    /// See: <https://en.wikipedia.org/wiki/Schulze_method#Implementations>
     pub fn strongest_paths(&self) -> Vec<((T, T), C)> {
         let zero = C::zero();
         let mut p = HashMap::<(usize, usize), C>::new();
