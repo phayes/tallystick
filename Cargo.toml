@@ -16,21 +16,22 @@ codecov = { repository = "phayes/tallystick", branch = "master", service = "gith
 maintenance = { status = "actively-developed" }
 
 [features]
-default = ["nightly"]
+default = ["nightly", "serde"]
 nightly = []
 rational = ["num-rational"]
 
 [package.metadata.docs.rs]
-features = ["nightly", "rational"]
+features = ["nightly", "rational", "serde"]
 
 [dependencies]
 failure = "0.1.6"
-petgraph = {default-features = false, version = "0.5.0"}
+petgraph = { default-features = false, version = "0.5.0" }
 derive_more = "0.99.3"
 num-traits = "0.2.11"
-num-rational = {optional = true, version = "0.2.3"}
+num-rational = { optional = true, version = "0.2.3" }
 hashbrown = "0.7.0"
 partial-min-max = "0.4"
+serde = { optional = true, version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
 criterion = "0.2"
@@ -40,4 +41,3 @@ maplit = "1.0.2"
 [[bench]]
 name = "benchmark"
 harness = false
-

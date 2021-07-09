@@ -7,6 +7,7 @@ use std::ops::RangeBounds;
 // A ranked-candidate with a lower rank beats a ranked-candidate with a higher rank.
 // Ranked-candidates with the same rank are tied.
 #[derive(Debug, Eq, PartialEq, From, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RankedCandidate<T: Clone + Eq + PartialEq> {
     pub candidate: T,
     pub rank: usize,
@@ -23,6 +24,7 @@ impl<T: Eq + PartialEq + Clone> PartialEq<(T, usize)> for RankedCandidate<T> {
 /// Winners with the same rank are tied.
 // TODO: implement Index, IndexMut
 #[derive(Debug, Eq, PartialEq, From, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RankedWinners<T: Clone + Eq + PartialEq> {
     /// Ranked winners
     pub winners: Vec<RankedCandidate<T>>,
