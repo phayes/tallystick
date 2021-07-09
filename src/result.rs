@@ -6,7 +6,7 @@ use std::ops::RangeBounds;
 // A RankedCandidate is candidate in an election, ranked ascending (starting from zero).
 // A ranked-candidate with a lower rank beats a ranked-candidate with a higher rank.
 // Ranked-candidates with the same rank are tied.
-#[derive(Debug, Eq, PartialEq, From, Default)]
+#[derive(Debug, Eq, PartialEq, From, Default, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RankedCandidate<T: Clone + Eq + PartialEq> {
     pub candidate: T,
@@ -23,7 +23,7 @@ impl<T: Eq + PartialEq + Clone> PartialEq<(T, usize)> for RankedCandidate<T> {
 /// Ranks are in ascending order. A `0` ranked winner is more significant than a `3` ranked winner.
 /// Winners with the same rank are tied.
 // TODO: implement Index, IndexMut
-#[derive(Debug, Eq, PartialEq, From, Default)]
+#[derive(Debug, Eq, PartialEq, From, Default, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RankedWinners<T: Clone + Eq + PartialEq> {
     /// Ranked winners
