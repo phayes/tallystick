@@ -16,7 +16,7 @@ codecov = { repository = "phayes/tallystick", branch = "master", service = "gith
 maintenance = { status = "actively-developed" }
 
 [features]
-default = []
+default = ["nightly"]
 nightly = []
 rational = ["num-rational"]
 
