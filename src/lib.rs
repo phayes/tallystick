@@ -9,6 +9,7 @@
 
 #![warn(missing_docs)]
 #![allow(clippy::redundant_field_names, clippy::cognitive_complexity)]
+#![cfg_attr(feature = "nightly", allow(incomplete_features))]
 #![cfg_attr(feature = "nightly", feature(specialization))]
 
 /// Utilities for parsing common vote formats
