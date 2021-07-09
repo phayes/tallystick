@@ -25,7 +25,7 @@ features = ["nightly", "rational", "serde"]
 
 [dependencies]
 failure = "0.1.6"
-petgraph = { default-features = false, version = "0.5.0" }
+petgraph = { default-features = false, version = "0.6.0" }
 derive_more = "0.99.3"
 num-traits = "0.2.11"
 num-rational = { optional = true, version = "0.2.3" }
