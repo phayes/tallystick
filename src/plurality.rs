@@ -5,6 +5,7 @@ use std::hash::Hash;
 use std::ops::AddAssign;
 
 use super::result::CountedCandidates;
+use super::result::RankedCandidate;
 use super::result::RankedWinners;
 
 /// A plurality tally using `u64` integers to count votes.
@@ -132,8 +133,8 @@ where
     ///    println!("We have {} winners", winners.len());
     ///    // Prints: "We have 3 winners" (due to Cir and Bob being tied)
     ///
-    ///    for (winner, rank) in winners.iter() {
-    ///       println!("{} has a rank of {}", winner, rank);
+    ///    for ranked in winners.iter() {
+    ///       println!("{} has a rank of {}", ranked.candidate, ranked.rank);
     ///    }
     ///    // Prints:
     ///    //   Alice has a rank of 0
@@ -177,15 +178,15 @@ where
     ///    for _ in 0..40 { tally.add("Bob") }
     ///    for _ in 0..30 { tally.add("Carlos") }
     ///    
-    ///    for (candidate, rank) in tally.ranked().iter() {
-    ///       println!("{} has a rank of {}", candidate, rank);
+    ///    for ranked in tally.ranked().iter() {
+    ///       println!("{} has a rank of {}", ranked.candidate, ranked.rank);
     ///    }
     ///    // Prints:
     ///    //   Alice has a rank of 0
     ///    //   Bob has a rank of 1
     ///    //   Carlos has a rank of 2
     /// ```
-    pub fn ranked(&self) -> Vec<(T, usize)> {
+    pub fn ranked(&self) -> Vec<RankedCandidate<T>> {
         self.get_counted().into_ranked(0).into_vec()
     }
 

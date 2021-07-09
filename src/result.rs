@@ -3,22 +3,35 @@ use num_traits::Num;
 use std::cmp::Ordering::Equal;
 use std::ops::RangeBounds;
 
-// A RankedWinner is a winner in an election, ranked ascending (starting from zero).
-// A ranked-winner with a lower rank beats a ranked-winner with a higher rank.
-// Ranked-winners with the same rank are tied.
-type RankedWinner<T> = (T, usize);
+// A RankedCandidate is candidate in an election, ranked ascending (starting from zero).
+// A ranked-candidate with a lower rank beats a ranked-candidate with a higher rank.
+// Ranked-candidates with the same rank are tied.
+#[derive(Debug, Eq, PartialEq, From, Default)]
+pub struct RankedCandidate<T: Clone + Eq + PartialEq> {
+    pub candidate: T,
+    pub rank: usize,
+}
+
+impl<T: Eq + PartialEq + Clone> PartialEq<(T, usize)> for RankedCandidate<T> {
+    fn eq(&self, other: &(T, usize)) -> bool {
+        self.candidate == other.0 && self.rank == other.1
+    }
+}
 
 /// `RankedWinners` is a ranked list of winning candidates, sorted according to rank.
 /// Ranks are in ascending order. A `0` ranked winner is more significant than a `3` ranked winner.
 /// Winners with the same rank are tied.
 // TODO: implement Index, IndexMut
 #[derive(Debug, Eq, PartialEq, From, Default)]
-pub struct RankedWinners<T: Clone> {
-    winners: Vec<RankedWinner<T>>,
-    num_winners: usize,
+pub struct RankedWinners<T: Clone + Eq + PartialEq> {
+    /// Ranked winners
+    pub winners: Vec<RankedCandidate<T>>,
+
+    /// Number of winners, this number could be less than winners.len() if there are ties in the lowest ranked winners.
+    pub num_winners: usize,
 }
 
-impl<T: Clone + Eq> RankedWinners<T> {
+impl<T: Clone + Eq + PartialEq> RankedWinners<T> {
     /// Get the number of winners.
     pub fn len(&self) -> usize {
         self.winners.len()
@@ -30,7 +43,7 @@ impl<T: Clone + Eq> RankedWinners<T> {
     }
 
     /// Clears the winners, returning all winner-rank pairs as an iterator.
-    pub fn drain<R>(&mut self, range: R) -> std::vec::Drain<'_, RankedWinner<T>>
+    pub fn drain<R>(&mut self, range: R) -> std::vec::Drain<'_, RankedCandidate<T>>
     where
         R: RangeBounds<usize>,
     {
@@ -38,15 +51,15 @@ impl<T: Clone + Eq> RankedWinners<T> {
     }
 
     /// Transform winners into a vector of winner-rank pairs.
-    pub fn into_vec(self) -> Vec<RankedWinner<T>> {
+    pub fn into_vec(self) -> Vec<RankedCandidate<T>> {
         self.winners
     }
 
     /// Get a list of all winners, without rank.
     pub fn all(&self) -> Vec<T> {
         let mut winners = Vec::<T>::with_capacity(self.len());
-        for (winner, _) in self.winners.iter() {
-            winners.push(winner.clone());
+        for ranked in self.winners.iter() {
+            winners.push(ranked.candidate.clone());
         }
 
         winners
@@ -59,8 +72,8 @@ impl<T: Clone + Eq> RankedWinners<T> {
 
     /// Check if the given candidate exists in the set of ranked-winners.
     pub fn contains(&self, candidate: &T) -> bool {
-        for (winner, _rank) in self.iter() {
-            if candidate == winner {
+        for ranked in self.iter() {
+            if candidate == &ranked.candidate {
                 return true;
             }
         }
@@ -70,9 +83,9 @@ impl<T: Clone + Eq> RankedWinners<T> {
 
     /// Get the rank of a single winner.
     pub fn rank(&self, candidate: &T) -> Option<usize> {
-        for (winner, rank) in self.iter() {
-            if candidate == winner {
-                return Some(*rank);
+        for ranked in self.iter() {
+            if candidate == &ranked.candidate {
+                return Some(ranked.rank);
             }
         }
 
@@ -82,8 +95,8 @@ impl<T: Clone + Eq> RankedWinners<T> {
     /// Get an unranked list of all winners, this consumes the winner list.
     pub fn into_unranked(mut self) -> Vec<T> {
         let mut all = Vec::new();
-        for (winner, _rank) in self.drain(0..) {
-            all.push(winner);
+        for ranked in self.drain(0..) {
+            all.push(ranked.candidate);
         }
 
         all
@@ -112,10 +125,10 @@ impl<T: Clone + Eq> RankedWinners<T> {
     pub fn overflow(&self) -> Option<Vec<T>> {
         if self.check_overflow() {
             let mut overflow = Vec::<T>::new();
-            let overflow_rank = self.winners[self.winners.len() - 1].1;
-            for (candidate, rank) in self.iter() {
-                if *rank == overflow_rank {
-                    overflow.push(candidate.clone());
+            let overflow_rank = self.winners[self.winners.len() - 1].rank;
+            for ranked in self.iter() {
+                if ranked.rank == overflow_rank {
+                    overflow.push(ranked.candidate.clone());
                 }
             }
             Some(overflow)
@@ -135,12 +148,12 @@ impl<T: Clone + Eq> RankedWinners<T> {
     // Push a new winner onto the end of of the list of winners
     // Make sure to call sort() before passing the Winners back to the user.
     pub(crate) fn push(&mut self, candidate: T, rank: usize) {
-        self.winners.push((candidate, rank));
+        self.winners.push((candidate, rank).into());
     }
 
     // Sort the winners by rank.
     pub(crate) fn sort(&mut self) {
-        self.winners.sort_by(|a, b| a.1.cmp(&b.1));
+        self.winners.sort_by(|a, b| a.rank.cmp(&b.rank));
     }
 
     // Create winners from a list of ranked candidates
@@ -165,13 +178,13 @@ impl<T: Clone + Eq> RankedWinners<T> {
 // ---------------------
 
 /// Iterator for winners
-pub struct IterWinners<'a, T: Clone> {
+pub struct IterWinners<'a, T: Clone + Eq + PartialEq> {
     inner: &'a RankedWinners<T>,
     pos: usize,
 }
 
-impl<'a, T: Clone> Iterator for IterWinners<'a, T> {
-    type Item = &'a RankedWinner<T>;
+impl<'a, T: Clone + Eq + PartialEq> Iterator for IterWinners<'a, T> {
+    type Item = &'a RankedCandidate<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.pos >= self.inner.winners.len() {

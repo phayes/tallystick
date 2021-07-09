@@ -1,6 +1,7 @@
 use super::check_duplicate;
 use super::plurality::PluralityTally;
 use super::result::CountedCandidates;
+use super::result::RankedCandidate;
 use super::result::RankedWinners;
 use super::Numeric;
 use super::TallyError;
@@ -283,7 +284,7 @@ where
     }
 
     /// Get a ranked list of all candidates. Candidates with the same rank are tied.
-    pub fn ranked(&self) -> Vec<(T, usize)> {
+    pub fn ranked(&self) -> Vec<RankedCandidate<T>> {
         let mut counted = CountedCandidates::new();
         for (candidate, votecount) in self.totals().iter() {
             counted.push(candidate.clone(), *votecount);

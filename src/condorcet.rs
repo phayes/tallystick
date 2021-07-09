@@ -299,8 +299,8 @@ where
     ///    }
     ///    
     ///    // Print all winners by rank
-    ///    for (winner, rank) in winners.iter() {
-    ///        println!("{} has a rank of {}", winner, rank);
+    ///    for ranked in winners.iter() {
+    ///        println!("{} has a rank of {}", ranked.candidate, ranked.rank);
     ///    }
     ///    // Prints:
     ///    //   Alice has a rank of 0

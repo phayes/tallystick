@@ -6,6 +6,7 @@ use super::condorcet::CondorcetTally;
 use super::errors::TallyError;
 use super::plurality::PluralityTally;
 use super::result::CountedCandidates;
+use super::result::RankedCandidate;
 use super::result::RankedWinners;
 use super::Numeric;
 use std::hash::Hash;
@@ -296,7 +297,7 @@ where
 
     /// Get a ranked list of all candidates. Candidates with the same rank are tied.
     /// Candidates are ranked in ascending order. The highest ranked candidate has a rank of `0`.
-    pub fn ranked(&self) -> Vec<(T, usize)> {
+    pub fn ranked(&self) -> Vec<RankedCandidate<T>> {
         self.get_counted().into_ranked(0).into_vec()
     }
 

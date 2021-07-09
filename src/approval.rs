@@ -4,6 +4,7 @@ use std::hash::Hash;
 use std::ops::AddAssign;
 
 use super::plurality::PluralityTally;
+use super::result::RankedCandidate;
 use super::result::RankedWinners;
 
 /// An approval tally using `u64` integers to count votes.
@@ -155,15 +156,15 @@ where
     ///    tally.add_weighted(vec!["Alice", "Bob"], 30);
     ///    tally.add_weighted(vec!["Bob", "Carol"], 10);
     ///    
-    ///    for (candidate, rank) in tally.ranked().iter() {
-    ///       println!("{} has a rank of {}", candidate, rank);
+    ///    for ranked in tally.ranked().iter() {
+    ///       println!("{} has a rank of {}", ranked.candidate, ranked.rank);
     ///    }
     ///    // Prints:
     ///    //   Bob has a rank of 0
     ///    //   Alice has a rank of 1
     ///    //   Carol has a rank of 2
     /// ```
-    pub fn ranked(&self) -> Vec<(T, usize)> {
+    pub fn ranked(&self) -> Vec<RankedCandidate<T>> {
         self.plurality.ranked()
     }
 }
