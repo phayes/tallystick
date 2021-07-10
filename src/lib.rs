@@ -110,6 +110,7 @@ pub mod irv;
 // Common Data Structures
 // ----------------------
 mod result;
+pub use crate::result::RankedCandidate;
 pub use crate::result::RankedWinners;
 
 // TODO: Remove dead code
