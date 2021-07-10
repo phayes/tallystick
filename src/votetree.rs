@@ -1,6 +1,6 @@
 //! VoteTree data structure for storing transferable preferential votes
-//! This data structure is taken from https://gitlab.com/mbq/wybr,
-//! with a special thanks to mbq.
+//!
+//! This data structure is taken from <https://gitlab.com/mbq/wybr>, with a special thanks to mbq.
 
 use super::Numeric;
 use hashbrown::HashMap;
