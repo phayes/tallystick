@@ -1,4 +1,5 @@
 use super::errors::TallyError;
+use super::RankedCandidate;
 use super::RankedWinners;
 
 use hashbrown::HashMap;
@@ -232,15 +233,15 @@ where
     ///    for _ in 0..40 { tally.add(&vec!["Bob", "Carlos", "Alice"]); }
     ///    for _ in 0..30 { tally.add(&vec!["Carlos", "Alice", "Bob"]); }
     ///    
-    ///    for (candidate, rank) in tally.ranked().iter() {
-    ///       println!("{} has a rank of {}", candidate, rank);
+    ///    for ranked in tally.ranked().iter() {
+    ///       println!("{} has a rank of {}", ranked.candidate, ranked.rank);
     ///    }
     ///    // Prints:
     ///    //   Alice has a rank of 0
     ///    //   Bob has a rank of 1
     ///    //   Carlos has a rank of 2
     /// ```
-    pub fn ranked(&self) -> Vec<(T, usize)> {
+    pub fn ranked(&self) -> Vec<RankedCandidate<T>> {
         // Compute smith-sets using Tarjan's strongly connected components algorithm.
         let graph = self.build_graph();
         let smith_sets = tarjan_scc(&graph);
@@ -252,7 +253,7 @@ where
         }
 
         // Add to ranked list.
-        let mut ranked = Vec::<(T, usize)>::with_capacity(self.candidates.len());
+        let mut ranked = Vec::<RankedCandidate<T>>::with_capacity(self.candidates.len());
         for (rank, smith_set) in smith_sets.iter().enumerate() {
             // We need to add all members of a smith set at the same time,
             // even if it means more winners than needed. All members of a smith_set
@@ -261,7 +262,10 @@ where
             // TODO: Check performance difference between cloning here and using a stable graph (where we can remove_node())
             for graph_id in smith_set.iter() {
                 let candidate = graph.node_weight(*graph_id).unwrap(); // Safe to unwrap here since graph should always contain a node-weight at this graph-id.
-                ranked.push((candidate.clone(), rank));
+                ranked.push(RankedCandidate {
+                    candidate: candidate.clone(),
+                    rank,
+                });
             }
         }
 

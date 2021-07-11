@@ -1,4 +1,5 @@
 use super::Numeric;
+use super::RankedCandidate;
 use super::RankedWinners;
 use crate::Transfer;
 use crate::VoteTree;
@@ -64,11 +65,11 @@ where
         self.running_total.add(selection, C::one());
     }
 
-    pub fn tally_ranked(&self) -> Vec<(T, usize)> {
+    pub fn tally_ranked(&self) -> Vec<RankedCandidate<T>> {
         let max = C::max_value();
 
         let candidates = self.running_total.candidates();
-        let mut inverse_ranked = Vec::<(T, usize)>::with_capacity(candidates.len());
+        let mut inverse_ranked = Vec::<RankedCandidate<T>>::with_capacity(candidates.len());
         let mut inverse_rank = 0;
         let mut eliminated = HashSet::new();
 
@@ -104,7 +105,10 @@ where
             }
             if all_tied {
                 for (cand, _) in score {
-                    inverse_ranked.push((cand, inverse_rank));
+                    inverse_ranked.push(RankedCandidate {
+                        candidate: cand,
+                        rank: inverse_rank,
+                    });
                 }
                 break;
             }
@@ -124,7 +128,10 @@ where
 
             // Remove all loosers
             for looser in loosers.drain(..) {
-                inverse_ranked.push((looser.clone(), inverse_rank));
+                inverse_ranked.push(RankedCandidate {
+                    candidate: looser.clone(),
+                    rank: inverse_rank,
+                });
                 eliminated.insert(looser);
             }
 
@@ -132,9 +139,12 @@ where
         }
 
         let num_ranked = inverse_ranked.len();
-        let mut ranked = Vec::<(T, usize)>::with_capacity(num_ranked);
-        for (cand, inverse_rank) in inverse_ranked.drain(..).rev() {
-            ranked.push((cand, num_ranked - inverse_rank - 1));
+        let mut ranked = Vec::<RankedCandidate<T>>::with_capacity(num_ranked);
+        for inversed in inverse_ranked.drain(..).rev() {
+            ranked.push(RankedCandidate {
+                candidate: inversed.candidate,
+                rank: num_ranked - inversed.rank - 1,
+            });
         }
         ranked
     }
@@ -165,14 +175,14 @@ mod tests {
 
         // Verify ranking
         let ranked = tally.tally_ranked();
-        assert_eq!(ranked[0].0, "Knoxville");
-        assert_eq!(ranked[0].1, 0);
-        assert_eq!(ranked[1].0, "Memphis");
-        assert_eq!(ranked[1].1, 1);
-        assert_eq!(ranked[2].0, "Nashville");
-        assert_eq!(ranked[2].1, 2);
-        assert_eq!(ranked[3].0, "Chattanooga");
-        assert_eq!(ranked[3].1, 3);
+        assert_eq!(ranked[0].candidate, "Knoxville");
+        assert_eq!(ranked[0].rank, 0);
+        assert_eq!(ranked[1].candidate, "Memphis");
+        assert_eq!(ranked[1].rank, 1);
+        assert_eq!(ranked[2].candidate, "Nashville");
+        assert_eq!(ranked[2].rank, 2);
+        assert_eq!(ranked[3].candidate, "Chattanooga");
+        assert_eq!(ranked[3].rank, 3);
 
         Ok(())
     }

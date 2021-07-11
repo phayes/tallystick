@@ -3,13 +3,16 @@ use num_traits::Num;
 use std::cmp::Ordering::Equal;
 use std::ops::RangeBounds;
 
-// A RankedCandidate is candidate in an election, ranked ascending (starting from zero).
-// A ranked-candidate with a lower rank beats a ranked-candidate with a higher rank.
-// Ranked-candidates with the same rank are tied.
+/// A RankedCandidate is candidate in an election, ranked ascending (starting from zero).
+/// A ranked-candidate with a lower rank beats a ranked-candidate with a higher rank.
+/// Ranked-candidates with the same rank are tied.
 #[derive(Debug, Eq, PartialEq, From, Default, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RankedCandidate<T: Clone + Eq + PartialEq> {
+    /// The Candidate
     pub candidate: T,
+
+    /// Candidate rank. A lower rank beats a higher rank. A rank of zero is the best a candidate can get.
     pub rank: usize,
 }
 
@@ -159,15 +162,15 @@ impl<T: Clone + Eq + PartialEq> RankedWinners<T> {
     }
 
     // Create winners from a list of ranked candidates
-    pub(crate) fn from_ranked(mut ranked: Vec<(T, usize)>, num_winners: usize) -> Self {
+    pub(crate) fn from_ranked(mut ranked: Vec<RankedCandidate<T>>, num_winners: usize) -> Self {
         let mut winners = Self::new(num_winners);
         let mut prev_rank = 0;
-        for (candidate, rank) in ranked.drain(0..) {
-            if winners.len() >= num_winners && rank != prev_rank {
+        for ranked in ranked.drain(0..) {
+            if winners.len() >= num_winners && ranked.rank != prev_rank {
                 break;
             }
-            winners.push(candidate, rank);
-            prev_rank = rank;
+            winners.push(ranked.candidate, ranked.rank);
+            prev_rank = ranked.rank;
         }
         winners.sort();
 
